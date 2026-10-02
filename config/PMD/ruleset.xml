@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Custom PMD ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+                    https://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+
+    <description>
+        Target: Spring Boot Microservices | JDK 17+
+        Intended for: PMD 7.x
+        Categories: Naming, Clean Code, Logging, Error Handling, Complexity,
+        Performance, Multithreading and Security.
+        Purpose: Recommended subset for learning clean code practices.
+    </description>
+
+    <!-- ==================== NAMING ==================== -->
+    <rule ref="category/java/codestyle.xml/MethodNamingConventions" />
+    <rule ref="category/java/codestyle.xml/ClassNamingConventions" />
+    <rule ref="category/java/codestyle.xml/FieldNamingConventions" />
+
+    <!-- ==================== CLEAN CODE ==================== -->
+    <rule ref="category/java/codestyle.xml/UnnecessaryConstructor" />
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock" />
+    <rule ref="category/java/codestyle.xml/EmptyControlStatement" />
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals" />
+    <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters" />
+
+    <!-- ==================== UNUSED CODE ==================== -->
+    <rule ref="category/java/codestyle.xml/UnnecessaryImport" />
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateField" />
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod" />
+    <rule ref="category/java/bestpractices.xml/UnusedFormalParameter" />
+
+    <!-- ==================== ERROR HANDLING ==================== -->
+    <rule ref="category/java/design.xml/AvoidCatchingGenericException" />
+    <rule ref="category/java/bestpractices.xml/UseTryWithResources" />
+    <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace" />
+
+    <!-- ==================== COMMON BUGS ==================== -->
+    <rule ref="category/java/errorprone.xml/UseEqualsToCompareStrings" />
+
+    <!-- ==================== COMPLEXITY ==================== -->
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <properties>
+            <property name="methodReportLevel" value="15" />
+        </properties>
+    </rule>
+
+</ruleset>
