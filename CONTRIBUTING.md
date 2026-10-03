@@ -261,3 +261,16 @@ gateway/
    - Notes (opcional)
 3. Verificar que pasa el workflow de GitHub Actions.
 4. Terminar de mergear el código a `dev`.
+
+## 9. Migraciones de base de datos (Flyway)
+
+Cada microservicio con base de datos gestiona su esquema con [Flyway](https://flywaydb.org/). Las tablas **no** las crea Hibernate: se definen con scripts SQL versionados.
+
+- **Dónde:** `src/main/resources/db/migration/` dentro de cada servicio.
+- **Nombre:** `V<número>__<descripcion>.sql`, con dos guiones bajos. Ejemplos: `V2__create_users_table.sql`, `V3__add_user_name_column.sql`. `V1__init.sql` es solo la migración inicial.
+- **Un cambio de esquema = una migración nueva.** Nunca se edita una migración que ya se ha aplicado: Flyway detecta el cambio (checksum) y el servicio no arranca.
+- **JPA en `validate`:** `spring.jpa.hibernate.ddl-auto` vale `validate` (variable `JPA_CONFIG_DDL`). Hibernate solo comprueba que las entidades coinciden con las tablas. Si creas una entidad sin su migración, el servicio no arrancará (`Schema-validation: missing table`).
+- **Prototipado local (opcional):** puedes poner `JPA_CONFIG_DDL=update` en tu `.env`, que no se sube, para probar rápido. Antes de abrir el PR escribe la migración, vuelve a `validate` y comprueba que arranca desde cero con `docker compose down -v`.
+- **Si falla por checksum en local:** `docker compose down -v` y arrancar de nuevo (borra los datos locales).
+- Flyway crea las tablas, pero **no las bases de datos**: esas las crea `docker/postgres/init-databases.sql`.
+

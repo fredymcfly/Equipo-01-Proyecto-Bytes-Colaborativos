@@ -76,6 +76,7 @@ Use the same convention as commits for the title. The description has three sect
 - Write code, comments and commits in English. The team has not formally confirmed this yet.
 - Use MapStruct for mapping and Lombok to cut boilerplate.
 - Each service owns its database (`<service>_db`) and applies its own Flyway migrations.
+- Schema changes are always a new Flyway migration in `src/main/resources/db/migration/` named `V<n>__<description>.sql`. Never edit an applied migration. JPA runs with `ddl-auto=validate`, so every entity needs its migration.
 
 ## API contract
 
