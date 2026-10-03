@@ -1,0 +1,46 @@
+# Build output
+target/
+build/
+out/
+
+# Maven
+.mvn/
+.mvn/wrapper/maven-wrapper.jar
+!mvnw
+!mvnw.cmd
+
+# Secrets
+.env
+
+# Logs
+*.log
+logs/
+tmp/
+
+# IDE / Editor
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+.dockerignore
+docker-compose.yml
+
+# Documentation
+README.md
+HELP.md
+docs/
+
+# Test files (optional)
+src/test/
