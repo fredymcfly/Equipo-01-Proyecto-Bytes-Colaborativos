@@ -1,0 +1,2 @@
+-- Initial migration (V1). Each service adds its own tables in later versions
+-- (V2__..., V3__...). Never edit a migration that has already been applied.
