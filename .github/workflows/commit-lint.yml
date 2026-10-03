@@ -21,8 +21,8 @@ jobs:
 
       - name: Create Commitlint config
         run: |
-          cat > commitlint.config.js <<'EOF'
-          module.exports = {
+          cat > commitlint.config.mjs <<'EOF'
+          export default {
             extends: ['@commitlint/config-conventional'],
             rules: {
               'type-enum': [2, 'always', ['feat', 'fix', 'refactor', 'docs', 'chore', 'test']],
@@ -34,4 +34,4 @@ jobs:
       - name: Lint PR commits
         uses: wagoid/commitlint-github-action@v6
         with:
-          configFile: commitlint.config.js
+          configFile: commitlint.config.mjs
