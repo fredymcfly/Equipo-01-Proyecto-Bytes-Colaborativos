@@ -1,0 +1,37 @@
+name: Commit Convention
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  commitlint:
+    name: Commit messages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create Commitlint config
+        run: |
+          cat > commitlint.config.js <<'EOF'
+          module.exports = {
+            extends: ['@commitlint/config-conventional'],
+            rules: {
+              'type-enum': [2, 'always', ['feat', 'fix', 'refactor', 'docs', 'chore', 'test']],
+              'scope-empty': [2, 'always'],
+            },
+          };
+          EOF
+
+      - name: Lint PR commits
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: commitlint.config.js
