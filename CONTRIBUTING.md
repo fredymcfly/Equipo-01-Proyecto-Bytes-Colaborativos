@@ -130,16 +130,17 @@ Definición de cada parte:
 
 ## 4. Integración continua (CI/CD)
 
-El repositorio utiliza GitHub Actions. Los workflows acordados son:
+El repositorio utiliza GitHub Actions. Los workflows son:
 
 | Workflow | Descripción |
 |---|---|
-| `code-quality` | Ejecuta los linters (Spotless, Checkstyle y PMD) con Java (versión a confirmar). Comprueba que el código cumple las normas de formato y calidad del equipo antes de fusionar un PR. |
-| `docker-build` | Construye los contenedores de los microservicios para comprobar que las imágenes se generan correctamente. |
+| `code-quality` | Ejecuta los linters (Spotless, Checkstyle y PMD) con Java 17. Comprueba que el código cumple las normas de formato y calidad del equipo antes de fusionar un PR. |
+| `commit-lint` | Comprueba que los mensajes de commit del PR siguen Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `chore`, `test`; sin scope). Las reglas están definidas dentro del propio workflow (`.github/workflows/commit-lint.yml`). |
+| `docker-build` | Construye los contenedores de los microservicios para comprobar que las imágenes se generan correctamente. Al hacer push a `main` también publica las imágenes en GitHub Container Registry. |
 
-**Ejecución.** Ambos workflows se lanzan en los PR hacia `dev` y `main`.
+**Ejecución.** Los tres workflows se lanzan en los PR hacia `dev` y `main`. Además, `docker-build` publica las imágenes cuando se integra código en `main`.
 
-**Workflow opcional (sin acordar):** `tests`. Ejecuta `mvn test` y genera el informe de JaCoCo. Se plantea como mejora si el equipo lo aprueba, ya que los dos workflows acordados no comprueban que el código funcione, solo su formato y que se construya.
+**Workflow opcional (sin acordar):** `tests`. Ejecuta `mvn test` y genera el informe de JaCoCo. Se plantea como mejora si el equipo lo aprueba, ya que los workflows actuales no comprueban que el código funcione, solo su formato y que se construya.
 
 ## 5. Comentarios Javadoc
 
@@ -177,6 +178,7 @@ proyecto/
 ├── .github/
 │   ├── workflows/
 │   │   ├── code-quality
+│   │   ├── commit-lint
 │   │   └── docker-build
 │   └── pull_request_template.md
 ├── config/
@@ -229,7 +231,7 @@ gateway/
    ```
 3. Hacer el build del docker-compose. Como estamos en la fase inicial, para que no tarde el proceso, se puede levantar únicamente la base de datos de Docker:
    ```bash
-   docker-compose up postgres-datasource
+   docker-compose up postgres
    ```
    Si quieres levantar todos los microservicios:
    ```bash

@@ -4,7 +4,7 @@ Guidance for AI coding assistants (Codex, Claude Code, etc.) working in this rep
 
 ## Project overview
 
-FleetControl is a fleet management backend made up of 9 microservices: Java 17, Spring Boot 3.x, PostgreSQL 15, Flyway, OpenFeign and Resilience4j. There are no external APIs. Demo data comes from a built-in seeder that runs under the `demo` Spring profile. See [README.MD](README.MD) for the architecture and startup steps.
+FleetControl is a fleet management backend made up of 9 microservices: Java 17, Spring Boot 3.x, PostgreSQL 15, Flyway, OpenFeign and Resilience4j. There are no external APIs. Demo data comes from a built-in seeder that runs under the `demo` Spring profile. See [README.MD](README.md) for the architecture and startup steps.
 
 | Service | Port |
 |---|---|
