@@ -1,0 +1,174 @@
+x-domain-env: &domain-env
+  JWT_SECRET: ${JWT_SECRET}
+  INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
+  DEMO_SEED: ${DEMO_SEED:-42}
+  DEMO_DAYS: ${DEMO_DAYS:-90}
+  SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-fleet}
+  SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+services:
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fleet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fleet} -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ms-gateway:
+    build: ./ms-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ms-auth
+      - ms-vehicles
+      - ms-drivers
+      - ms-routes
+      - ms-maintenance
+      - ms-fuel
+      - ms-alerts
+      - ms-dashboard
+    environment:
+      AUTH_SERVICE_URL: http://ms-auth:8081
+      VEHICLES_SERVICE_URL: http://ms-vehicles:8082
+      DRIVERS_SERVICE_URL: http://ms-drivers:8083
+      ROUTES_SERVICE_URL: http://ms-routes:8085
+      MAINTENANCE_SERVICE_URL: http://ms-maintenance:8086
+      FUEL_SERVICE_URL: http://ms-fuel:8087
+      ALERTS_SERVICE_URL: http://ms-alerts:8088
+      DASHBOARD_SERVICE_URL: http://ms-dashboard:8089
+
+  ms-auth:
+    build: ./ms-auth
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *domain-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_db
+      JWT_EXPIRATION: 3600000
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD}
+
+  ms-vehicles:
+    build: ./ms-vehicles
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *domain-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/vehicles_db
+
+  ms-drivers:
+    build: ./ms-drivers
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *domain-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/drivers_db
+
+  ms-routes:
+    build: ./ms-routes
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ms-vehicles:
+        condition: service_started
+      ms-drivers:
+        condition: service_started
+    environment:
+      <<: *domain-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/routes_db
+      VEHICLES_SERVICE_URL: http://ms-vehicles:8082
+      DRIVERS_SERVICE_URL: http://ms-drivers:8083
+
+  ms-maintenance:
+    build: ./ms-maintenance
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ms-vehicles:
+        condition: service_started
+    environment:
+      <<: *domain-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/maintenance_db
+      VEHICLES_SERVICE_URL: http://ms-vehicles:8082
+
+  ms-fuel:
+    build: ./ms-fuel
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ms-vehicles:
+        condition: service_started
+    environment:
+      <<: *domain-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fuel_db
+      VEHICLES_SERVICE_URL: http://ms-vehicles:8082
+
+  ms-alerts:
+    build: ./ms-alerts
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ms-vehicles:
+        condition: service_started
+      ms-drivers:
+        condition: service_started
+      ms-maintenance:
+        condition: service_started
+      ms-fuel:
+        condition: service_started
+    environment:
+      <<: *domain-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/alerts_db
+      VEHICLES_SERVICE_URL: http://ms-vehicles:8082
+      DRIVERS_SERVICE_URL: http://ms-drivers:8083
+      MAINTENANCE_SERVICE_URL: http://ms-maintenance:8086
+      FUEL_SERVICE_URL: http://ms-fuel:8087
+      ALERTS_EVALUATION_INTERVAL_MS: 900000
+
+  ms-dashboard:
+    build: ./ms-dashboard
+    ports:
+      - "8089:8089"
+    depends_on:
+      - ms-vehicles
+      - ms-routes
+      - ms-fuel
+      - ms-maintenance
+      - ms-alerts
+    environment:
+      <<: *domain-env
+      VEHICLES_SERVICE_URL: http://ms-vehicles:8082
+      ROUTES_SERVICE_URL: http://ms-routes:8085
+      FUEL_SERVICE_URL: http://ms-fuel:8087
+      MAINTENANCE_SERVICE_URL: http://ms-maintenance:8086
+      ALERTS_SERVICE_URL: http://ms-alerts:8088
+
+volumes:
+  pgdata:

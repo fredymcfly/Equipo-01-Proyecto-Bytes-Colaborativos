@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/ms-alerts/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-auth/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-dashboard/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-drivers/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-fuel/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-gateway/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-maintenance/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-routes/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-vehicles/src/main/java" charset="UTF-8" />
+  </component>
+</project>
