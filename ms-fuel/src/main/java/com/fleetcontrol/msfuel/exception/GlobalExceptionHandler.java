@@ -2,8 +2,6 @@ package com.fleetcontrol.msfuel.exception;
 
 import com.fleetcontrol.msfuel.exception.ApiErrorResponse.ApiFieldError;
 import jakarta.validation.ConstraintViolationException;
-
-import java.util.Arrays;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,15 +12,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  /** Ilegal Argument para la petición que no cumplen sus validaciones. */
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-   List<ApiFieldError> details =
-   Arrays.stream(ex.getSuppressed())
-           .map(error -> new ApiFieldError(error.getCause().toString(), error.getMessage()))
-     .toList();
-   return response(ErrorCode.VALIDATION_ERROR,ApiErrorResponse.of(ErrorCode.VALIDATION_ERROR, details));
-   }
+  /** La petición incumple una regla de negocio, como superar la capacidad del depósito. */
+  @ExceptionHandler(InvalidRequestException.class)
+  public ResponseEntity<ApiErrorResponse> handleInvalidRequest(InvalidRequestException ex) {
+    return response(ex.getErrorCode(), ApiErrorResponse.of(ex.getErrorCode(), ex.getMessage()));
+  }
 
   /** Recurso inexistente en el servicio que lo posee. */
   @ExceptionHandler(ResourceNotFoundException.class)

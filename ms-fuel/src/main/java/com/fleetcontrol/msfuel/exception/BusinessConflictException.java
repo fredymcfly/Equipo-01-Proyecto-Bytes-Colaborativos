@@ -9,6 +9,6 @@ public class BusinessConflictException extends ApiException {
    * @param errorCode código del contrato común
    */
   public BusinessConflictException(ErrorCode errorCode) {
-    super(errorCode, message);
+    super(errorCode, errorCode.getDefaultMessage());
   }
 }

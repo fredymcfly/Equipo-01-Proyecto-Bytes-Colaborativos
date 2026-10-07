@@ -12,7 +12,7 @@ public class DependencyUnavailableException extends ApiException {
    * @param errorCode código del contrato común
    */
   public DependencyUnavailableException(String service, ErrorCode errorCode) {
-    super(errorCode, "Dependency unavailable: " + service);
+    super(errorCode, errorCode.getDefaultMessage());
     this.service = service;
   }
 

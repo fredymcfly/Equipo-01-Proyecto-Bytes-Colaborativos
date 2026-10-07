@@ -11,13 +11,13 @@ public class ApiException extends RuntimeException {
   private final ErrorCode errorCode;
 
   /**
-   * Crea el error con el mensaje por defecto de su código.
+   * Crea el error con el mensaje que se devuelve al cliente.
    *
    * @param errorCode código del contrato común
-   * @param message
+   * @param message mensaje de la respuesta
    */
   public ApiException(ErrorCode errorCode, String message) {
-    super(errorCode.getDefaultMessage());
+    super(message);
     this.errorCode = errorCode;
   }
 

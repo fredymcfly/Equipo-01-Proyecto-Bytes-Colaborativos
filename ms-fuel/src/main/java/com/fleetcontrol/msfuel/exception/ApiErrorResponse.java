@@ -20,6 +20,11 @@ public record ApiErrorResponse(
         errorCode.name(), errorCode.getDefaultMessage(), null, Instant.now(), null);
   }
 
+  /** Error con un mensaje más concreto que el de su código, el caso de las reglas de negocio. */
+  public static ApiErrorResponse of(ErrorCode errorCode, String message) {
+    return new ApiErrorResponse(errorCode.name(), message, null, Instant.now(), null);
+  }
+
   /** Error de validación, que sí lleva el detalle campo a campo. */
   public static ApiErrorResponse of(ErrorCode errorCode, List<ApiFieldError> details) {
     return new ApiErrorResponse(

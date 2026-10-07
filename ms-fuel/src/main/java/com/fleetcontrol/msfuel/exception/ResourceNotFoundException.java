@@ -9,6 +9,6 @@ public class ResourceNotFoundException extends ApiException {
    * @param errorCode código del contrato común
    */
   public ResourceNotFoundException(ErrorCode errorCode) {
-    super(errorCode, message);
+    super(errorCode, errorCode.getDefaultMessage());
   }
 }
