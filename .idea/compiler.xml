@@ -6,7 +6,6 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="ms-fuel" />
         <module name="ms-auth" />
         <module name="ms-alerts" />
         <module name="ms-drivers" />
@@ -16,19 +15,30 @@
         <module name="ms-routes" />
         <module name="ms-gateway" />
       </profile>
+      <profile name="Annotation profile for ms-fuel" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok-mapstruct-binding/0.2.0/lombok-mapstruct-binding-0.2.0.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.6.0/mapstruct-processor-1.6.0.jar" />
+        </processorPath>
+        <module name="ms-fuel" />
+      </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="ms-alerts" options="-parameters" />
-      <module name="ms-auth" options="-parameters" />
-      <module name="ms-dashboard" options="-parameters" />
-      <module name="ms-drivers" options="-parameters" />
+      <module name="ms-alerts" options="" />
+      <module name="ms-auth" options="" />
+      <module name="ms-dashboard" options="" />
+      <module name="ms-drivers" options="" />
       <module name="ms-fuel" options="-parameters" />
-      <module name="ms-gateway" options="-parameters" />
-      <module name="ms-maintenance" options="-parameters" />
-      <module name="ms-routes" options="-parameters" />
-      <module name="ms-vehicles" options="-parameters" />
+      <module name="ms-gateway" options="" />
+      <module name="ms-maintenance" options="" />
+      <module name="ms-routes" options="" />
+      <module name="ms-vehicles" options="" />
     </option>
   </component>
 </project>
