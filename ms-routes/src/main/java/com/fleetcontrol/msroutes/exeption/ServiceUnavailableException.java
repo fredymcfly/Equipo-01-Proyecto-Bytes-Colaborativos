@@ -14,7 +14,7 @@ public class ServiceUnavailableException extends ApiException{
     super(
         HttpStatus.SERVICE_UNAVAILABLE,
         "SERVICE_UNAVAILABLE",
-        "El servicio " + service + " no responde"
+        "The service " + service + " is unavailable"
     );
     this.service = service;
 

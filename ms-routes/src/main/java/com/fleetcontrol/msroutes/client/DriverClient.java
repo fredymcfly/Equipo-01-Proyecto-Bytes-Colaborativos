@@ -1,5 +1,6 @@
 package com.fleetcontrol.msroutes.client;
 
+import com.fleetcontrol.msroutes.client.dto.DriverResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

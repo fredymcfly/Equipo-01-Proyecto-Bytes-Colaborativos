@@ -20,11 +20,11 @@ import java.util.UUID;
  * @param plannedDistanceKm
  */
 public record CreateRouteRequest(
-        @NotNull UUID vehicleId,
-        @NotNull UUID driverId,
-        @NotBlank @Size(max= 255) String origin,
-        @NotBlank @Size(max=255) String destination,
-        @NotNull Instant plannedStart,
-        @NotNull @Positive Integer estimatedDurationMin,
-        @NotNull @Positive BigDecimal plannedDistanceKm
-        ) {}
+  @NotNull UUID vehicleId,
+  @NotNull UUID driverId,
+  @NotBlank @Size(max= 255) String origin,
+  @NotBlank @Size(max=255) String destination,
+  @NotNull Instant plannedStart,
+  @NotNull @Positive Integer estimatedDurationMin,
+  @NotNull @Positive BigDecimal plannedDistanceKm
+) {}
