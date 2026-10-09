@@ -1,6 +1,5 @@
 package com.fleetcontrol.msroutes.service;
 
-
 import com.fleetcontrol.msroutes.client.DriverClient;
 import com.fleetcontrol.msroutes.client.VehicleClient;
 import com.fleetcontrol.msroutes.client.dto.DriverResponse;
@@ -18,6 +17,11 @@ import com.fleetcontrol.msroutes.exeption.ServiceUnavailableException;
 import com.fleetcontrol.msroutes.repository.RouteRepository;
 import com.fleetcontrol.msroutes.repository.RouteSpecifications;
 import feign.FeignException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -25,15 +29,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.UUID;
-
-/**
- * Plans and queries routes
- */
+/** Plans and queries routes. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -64,31 +60,31 @@ public class RouteService {
     checkNoOverlap(request);
 
     Route route =
-      Route.builder()
-        .vehicleId(request.vehicleId())
-        .driverId(request.driverId())
-        .origin(request.origin())
-        .destination(request.destination())
-        .plannedStart(request.plannedStart())
-        .estimatedDurationMin(request.estimatedDurationMin())
-        .plannedDistanceKm(request.plannedDistanceKm())
-        .status(RouteStatus.PLANNED)
-        .createdBy(createdBy)
-        .build();
+        Route.builder()
+            .vehicleId(request.vehicleId())
+            .driverId(request.driverId())
+            .origin(request.origin())
+            .destination(request.destination())
+            .plannedStart(request.plannedStart())
+            .estimatedDurationMin(request.estimatedDurationMin())
+            .plannedDistanceKm(request.plannedDistanceKm())
+            .status(RouteStatus.PLANNED)
+            .createdBy(createdBy)
+            .build();
     return RouteResponse.from(routeRepository.save(route));
   }
 
   /** Returns a route by id or fails with ROUTE_NOT_FOUND. */
   public RouteResponse getRoute(UUID routeId) {
     return routeRepository
-      .findById(routeId)
-      .map(RouteResponse::from)
-      .orElseThrow(
-        () ->
-          new ApiException(
-            HttpStatus.NOT_FOUND,
-            "ROUTE_NOT_FOUND",
-            "No exists a route with the Id provided"));
+        .findById(routeId)
+        .map(RouteResponse::from)
+        .orElseThrow(
+            () ->
+                new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "ROUTE_NOT_FOUND",
+                    "No exists a route with the Id provided"));
   }
 
   /**
@@ -98,37 +94,35 @@ public class RouteService {
    * @param to last day (inclusive, UTC) of the planned start; may be null
    */
   public PageResponse<RouteResponse> listRoutes(
-    RouteStatus status,
-    UUID vehicleId,
-    UUID driverId,
-    LocalDate from,
-    LocalDate to,
-    int page,
-    int size) {
+      RouteStatus status,
+      UUID vehicleId,
+      UUID driverId,
+      LocalDate from,
+      LocalDate to,
+      int page,
+      int size) {
     Instant fromInstant = from == null ? null : from.atStartOfDay(ZoneOffset.UTC).toInstant();
     Instant toInstant = to == null ? null : to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
     PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "plannedStart"));
 
     return PageResponse.from(
-      routeRepository
-        .findAll(
-          RouteSpecifications.withFilters(status, vehicleId, driverId, fromInstant, toInstant),
-          pageable)
-        .map(RouteResponse::from));
+        routeRepository
+            .findAll(
+                RouteSpecifications.withFilters(
+                    status, vehicleId, driverId, fromInstant, toInstant),
+                pageable)
+            .map(RouteResponse::from));
   }
 
-  private VehicleResponse fetchVehicle(UUID vehicleId){
+  private VehicleResponse fetchVehicle(UUID vehicleId) {
     try {
       return vehicleClient.getVehicle(vehicleId);
-    }catch (FeignException.NotFound e){
+    } catch (FeignException.NotFound e) {
       throw new ApiException(
-        HttpStatus.NOT_FOUND,
-        "VEHICLE_NOT_FOUND",
-        "No vehicle was found with the provided id."
-      );
-    }catch(FeignException e){
-        throw unavailable(VEHICLES_SERVICE, e);
-      }
+          HttpStatus.NOT_FOUND, "VEHICLE_NOT_FOUND", "No vehicle was found with the provided id.");
+    } catch (FeignException e) {
+      throw unavailable(VEHICLES_SERVICE, e);
+    }
   }
 
   private DriverResponse fetchDriver(UUID driverId) {
@@ -136,9 +130,7 @@ public class RouteService {
       return driverClient.getDriver(driverId);
     } catch (FeignException.NotFound e) {
       throw new ApiException(
-              HttpStatus.NOT_FOUND,
-              "DRIVER_NOT_FOUND",
-              "No  driver was found with the provided id.");
+          HttpStatus.NOT_FOUND, "DRIVER_NOT_FOUND", "No driver was found with the provided id.");
     } catch (FeignException e) {
       throw unavailable(DRIVERS_SERVICE, e);
     }
@@ -150,13 +142,11 @@ public class RouteService {
     }
     LocalDate startDate = start.atZone(ZoneOffset.UTC).toLocalDate();
     if (driver.licenseExpiresAt().isBefore(startDate)) {
-      throw conflict(
-              "DRIVER_NOT_ELIGIBLE", "The driver's license is not valid on the start date");
+      throw conflict("DRIVER_NOT_ELIGIBLE", "The driver's license is not valid on the start date");
     }
     if (!driver.licenseCategory().allows(type)) {
       throw conflict(
-              "DRIVER_NOT_ELIGIBLE",
-              "The license category is invalid for the selected vehicle type");
+          "DRIVER_NOT_ELIGIBLE", "The license category is invalid for the selected vehicle type");
     }
   }
 
@@ -164,10 +154,14 @@ public class RouteService {
     Instant start = request.plannedStart();
     Instant end = start.plus(Duration.ofMinutes(request.estimatedDurationMin()));
     if (routeRepository.existsVehicleOverlap(request.vehicleId(), start, end)) {
-      throw conflict("ROUTE_OVERLAP", "Vehicle unavailable: an existing route overlap with the specified time interval");
+      throw conflict(
+          "ROUTE_OVERLAP",
+          "Vehicle unavailable: an existing route overlap with the specified time interval");
     }
     if (routeRepository.existsDriverOverlap(request.driverId(), start, end)) {
-      throw conflict("ROUTE_OVERLAP", "Driver unavailable: an existing route overlap with the specified time interval");
+      throw conflict(
+          "ROUTE_OVERLAP",
+          "Driver unavailable: an existing route overlap with the specified time interval");
     }
   }
 
@@ -175,7 +169,7 @@ public class RouteService {
     return new ApiException(HttpStatus.CONFLICT, code, message);
   }
 
-  private ServiceUnavailableException unavailable(String service, FeignException cause){
+  private ServiceUnavailableException unavailable(String service, FeignException cause) {
     log.warn("{} no response: {}", service, cause.getMessage());
     return new ServiceUnavailableException(service);
   }

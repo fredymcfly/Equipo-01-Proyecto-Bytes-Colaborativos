@@ -1,40 +1,39 @@
 package com.fleetcontrol.msroutes.dto;
 
+import java.util.List;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
-
 /**
- * Page with structure required by the common contract
- * @param content
- * @param page
- * @param size
- * @param totalElements
- * @param totalPages
- * @param <T>
+ * Page response with the structure required by the common contract.
+ *
+ * @param <T> type of the page content
+ * @param content page content
+ * @param page zero-based page number
+ * @param size number of elements per page
+ * @param totalElements total number of elements
+ * @param totalPages total number of pages
  */
 public record PageResponse<T>(
-  List<T> content,
-  int page,
-  int size,
-  long totalElements,
-  int totalPages
-) {
+    List<T> content, int page, int size, long totalElements, int totalPages) {
 
-
-  public static <T> PageResponse<T> from(Page<T> page){
+  /**
+   * Creates a response from a Spring Data page.
+   *
+   * @param page Spring Data page
+   * @param <T> type of the page content
+   * @return response containing the page data
+   */
+  public static <T> PageResponse<T> from(Page<T> page) {
     return new PageResponse<>(
-            page.getContent(),
-            page.getNumber(),
-            page.getSize(),
-            page.getTotalElements(),
-            page.getTotalPages()
-    );
+        page.getContent(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages());
   }
 }
 
 /*
-* I use this PageResponse because serializing Spring's Page object directly produces a different structure,
-* while the contract requires content, page, size, totalElements, and totalPages.
-* The response follows the example provided in the PDF, so it does not expose createdBy, createdAt, or updatedAt.
-* */
+ * Serializing Spring's Page directly produces a different structure, while the
+ * contract requires content, page, size, totalElements, and totalPages.
+ */
