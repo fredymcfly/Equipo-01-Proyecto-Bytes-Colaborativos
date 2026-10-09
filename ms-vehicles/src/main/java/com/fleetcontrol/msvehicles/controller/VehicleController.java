@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class VehicleController {
 
-  private final VehicleService service;
+  private final VehicleService vehicleService;
 
   /** Lists vehicles with optional filters and pagination. */
   @GetMapping
@@ -46,14 +46,14 @@ public class VehicleController {
       @RequestParam(required = false) String plate,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-    return service.list(status, type, plate, page, size);
+    return vehicleService.list(status, type, plate, page, size);
   }
 
   /** Returns the detailed data of one vehicle. */
   @GetMapping("/{vehicleId}")
   @Operation(summary = "Get a vehicle by id")
   public VehicleResponse get(@PathVariable UUID vehicleId) {
-    return service.getById(vehicleId);
+    return vehicleService.getById(vehicleId);
   }
 
   /** Registers a new vehicle. */
@@ -61,7 +61,7 @@ public class VehicleController {
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(summary = "Create a vehicle")
   public VehicleResponse create(@Valid @RequestBody CreateVehicleRequest request) {
-    return service.create(request);
+    return vehicleService.create(request);
   }
 
   /** Updates the descriptive data of a vehicle. */
@@ -69,6 +69,6 @@ public class VehicleController {
   @Operation(summary = "Update a vehicle")
   public VehicleResponse update(
       @PathVariable UUID vehicleId, @Valid @RequestBody UpdateVehicleRequest request) {
-    return service.update(vehicleId, request);
+    return vehicleService.update(vehicleId, request);
   }
 }
