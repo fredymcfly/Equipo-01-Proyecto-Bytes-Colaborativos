@@ -10,8 +10,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.domain.Specification;
 
 /** Builds dynamic filters for route queries. */
-public class RouteSpecifications {
-  private RouteSpecifications() {}
+public class RouteSpecification {
+  private RouteSpecification() {}
 
   /**
    * Combines the optional filters; null values are ignored.

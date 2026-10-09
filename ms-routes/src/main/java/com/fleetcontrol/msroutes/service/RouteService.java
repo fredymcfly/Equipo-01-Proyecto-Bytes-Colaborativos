@@ -15,7 +15,7 @@ import com.fleetcontrol.msroutes.enums.RouteStatus;
 import com.fleetcontrol.msroutes.exeption.ApiException;
 import com.fleetcontrol.msroutes.exeption.ServiceUnavailableException;
 import com.fleetcontrol.msroutes.repository.RouteRepository;
-import com.fleetcontrol.msroutes.repository.RouteSpecifications;
+import com.fleetcontrol.msroutes.repository.RouteSpecification;
 import feign.FeignException;
 import java.time.Duration;
 import java.time.Instant;
@@ -108,8 +108,7 @@ public class RouteService {
     return PageResponse.from(
         routeRepository
             .findAll(
-                RouteSpecifications.withFilters(
-                    status, vehicleId, driverId, fromInstant, toInstant),
+                RouteSpecification.withFilters(status, vehicleId, driverId, fromInstant, toInstant),
                 pageable)
             .map(RouteResponse::from));
   }

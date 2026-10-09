@@ -15,7 +15,7 @@ public interface RouteRepository
   /**
    * Checks if the vehicle has a planned or in-progress route overlapping the given interval.
    * Overlap: two intervals overlap if existing_start < new_end and existing_end > new_start. Using
-   * strict and > comparisons, a route that ends exactly when another begins is not considered an
+   * strict < and > comparisons, a route that ends exactly when another begins is not considered an
    * overlap. The end time is calculated as planned_start + estimated_duration_min, without using a
    * derived column.
    *
