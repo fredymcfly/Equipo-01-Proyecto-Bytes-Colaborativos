@@ -4,6 +4,7 @@ import com.fleetcontrol.msvehicles.dto.CreateVehicleRequest;
 import com.fleetcontrol.msvehicles.dto.PageResponse;
 import com.fleetcontrol.msvehicles.dto.UpdateVehicleRequest;
 import com.fleetcontrol.msvehicles.dto.VehicleResponse;
+import com.fleetcontrol.msvehicles.dto.VehicleStatusRequest;
 import com.fleetcontrol.msvehicles.dto.VehicleSummaryResponse;
 import com.fleetcontrol.msvehicles.model.VehicleStatus;
 import com.fleetcontrol.msvehicles.model.VehicleType;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -70,5 +72,13 @@ public class VehicleController {
   public VehicleResponse update(
       @PathVariable UUID vehicleId, @Valid @RequestBody UpdateVehicleRequest request) {
     return vehicleService.update(vehicleId, request);
+  }
+
+  /** Changes the status of a vehicle and, optionally, its odometer. */
+  @PatchMapping("/{vehicleId}/status")
+  @Operation(summary = "Change the status and odometer of a vehicle")
+  public VehicleResponse changeStatus(
+      @PathVariable UUID vehicleId, @Valid @RequestBody VehicleStatusRequest request) {
+    return vehicleService.changeStatus(vehicleId, request);
   }
 }
