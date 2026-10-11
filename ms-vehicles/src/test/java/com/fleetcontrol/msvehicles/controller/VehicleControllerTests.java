@@ -2,6 +2,7 @@ package com.fleetcontrol.msvehicles.controller;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -10,7 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fleetcontrol.msvehicles.dto.CreateVehicleRequest;
 import com.fleetcontrol.msvehicles.dto.UpdateVehicleRequest;
+import com.fleetcontrol.msvehicles.dto.VehicleStatusRequest;
 import com.fleetcontrol.msvehicles.model.FuelType;
+import com.fleetcontrol.msvehicles.model.VehicleStatus;
 import com.fleetcontrol.msvehicles.model.VehicleType;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -128,6 +131,119 @@ class VehicleControllerTests {
         .andExpect(jsonPath("$.model").value("Transit Custom"))
         .andExpect(jsonPath("$.plate").value(PLATE))
         .andExpect(jsonPath("$.status").value("AVAILABLE"));
+  }
+
+  @Test
+  void changesVehicleStatus() throws Exception {
+    String vehicleId = createVehicleId();
+
+    mockMvc
+        .perform(
+            patch(ENDPOINT + "/{vehicleId}/status", vehicleId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(new VehicleStatusRequest(VehicleStatus.IN_USE, null))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("IN_USE"));
+  }
+
+  @Test
+  void rejectsSameStatusTransition() throws Exception {
+    String vehicleId = createVehicleId();
+
+    mockMvc
+        .perform(
+            patch(ENDPOINT + "/{vehicleId}/status", vehicleId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(new VehicleStatusRequest(VehicleStatus.AVAILABLE, null))))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.error").value("INVALID_STATUS_TRANSITION"));
+  }
+
+  @Test
+  void rejectsLowerOdometer() throws Exception {
+    String vehicleId = createVehicleId();
+
+    mockMvc
+        .perform(
+            patch(ENDPOINT + "/{vehicleId}/status", vehicleId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(new VehicleStatusRequest(VehicleStatus.IN_USE, 1))))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.error").value("INVALID_ODOMETER"));
+  }
+
+  @Test
+  void forbidsManagerReactivatingOutOfService() throws Exception {
+    String vehicleId = createVehicleId();
+    changeStatus(vehicleId, new VehicleStatusRequest(VehicleStatus.OUT_OF_SERVICE, null));
+
+    mockMvc
+        .perform(
+            patch(ENDPOINT + "/{vehicleId}/status", vehicleId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(new VehicleStatusRequest(VehicleStatus.AVAILABLE, null))))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.error").value("FORBIDDEN"));
+  }
+
+  @Test
+  @WithMockUser(roles = "ADMIN")
+  void allowsAdminReactivatingOutOfService() throws Exception {
+    String vehicleId = createVehicleId();
+    changeStatus(vehicleId, new VehicleStatusRequest(VehicleStatus.OUT_OF_SERVICE, null));
+
+    mockMvc
+        .perform(
+            patch(ENDPOINT + "/{vehicleId}/status", vehicleId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(new VehicleStatusRequest(VehicleStatus.AVAILABLE, null))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("AVAILABLE"));
+  }
+
+  @Test
+  void returnsNotFoundWhenChangingUnknownVehicle() throws Exception {
+    mockMvc
+        .perform(
+            patch(ENDPOINT + "/{vehicleId}/status", UUID.randomUUID())
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(new VehicleStatusRequest(VehicleStatus.IN_USE, null))))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error").value("VEHICLE_NOT_FOUND"));
+  }
+
+  @Test
+  void rejectsStatusBodyWithoutStatus() throws Exception {
+    String vehicleId = createVehicleId();
+
+    mockMvc
+        .perform(
+            patch(ENDPOINT + "/{vehicleId}/status", vehicleId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+  }
+
+  private String createVehicleId() throws Exception {
+    return objectMapper.readTree(createVehicle()).get("id").asText();
+  }
+
+  private void changeStatus(String vehicleId, VehicleStatusRequest request) throws Exception {
+    mockMvc
+        .perform(
+            patch(ENDPOINT + "/{vehicleId}/status", vehicleId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(request)))
+        .andExpect(status().isOk());
   }
 
   private String createVehicle() throws Exception {
