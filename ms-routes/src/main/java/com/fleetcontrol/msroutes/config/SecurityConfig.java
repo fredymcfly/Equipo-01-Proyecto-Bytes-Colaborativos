@@ -1,8 +1,9 @@
 package com.fleetcontrol.msroutes.config;
 
-
-import feign.Request;
 import jakarta.servlet.DispatcherType;
+import java.nio.charset.StandardCharsets;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,10 +21,7 @@ import org.springframework.security.oauth2.server.resource.web.authentication.Be
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-
+/** Configures stateless authentication and authorization for the routes service. */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -38,40 +36,40 @@ public class SecurityConfig {
 
   @Bean
   SecurityFilterChain securityFilterChain(
-    HttpSecurity http,
-    SecurityErrorHandler errorHandler,
-    @Value("${internal.api-key}") String internalApiKey)
-    throws Exception {
+      HttpSecurity http,
+      SecurityErrorHandler errorHandler,
+      @Value("${internal.api-key}") String internalApiKey)
+      throws Exception {
 
     // Endpoints marked as "internal calls" in the contract: GET /api/routes, /{id} and /stats.
     RequestMatcher internalCalls =
-      request ->
-        HttpMethod.GET.matches(request.getMethod())
-          && request.getRequestURI().startsWith("/api/routes");
+        request ->
+            HttpMethod.GET.matches(request.getMethod())
+                && request.getRequestURI().startsWith("/api/routes");
 
     http.csrf(AbstractHttpConfigurer::disable)
-      .formLogin(AbstractHttpConfigurer::disable)
-      .httpBasic(AbstractHttpConfigurer::disable)
-      .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-      .exceptionHandling(
-        e -> e.authenticationEntryPoint(errorHandler).accessDeniedHandler(errorHandler))
-      .authorizeHttpRequests(
-        auth ->
-          auth.dispatcherTypeMatchers(DispatcherType.ERROR)
-            .permitAll()
-            .requestMatchers(PUBLIC_ENDPOINTS)
-            .permitAll()
-            .anyRequest()
-            .hasAnyRole("MANAGER", "ADMIN"))
-      .oauth2ResourceServer(
-        oauth ->
-          oauth
-            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-            .authenticationEntryPoint(errorHandler)
-            .accessDeniedHandler(errorHandler))
-      .addFilterBefore(
-        new InternalKeyFilter(internalApiKey, internalCalls, errorHandler),
-        BearerTokenAuthenticationFilter.class);
+        .formLogin(AbstractHttpConfigurer::disable)
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .exceptionHandling(
+            e -> e.authenticationEntryPoint(errorHandler).accessDeniedHandler(errorHandler))
+        .authorizeHttpRequests(
+            auth ->
+                auth.dispatcherTypeMatchers(DispatcherType.ERROR)
+                    .permitAll()
+                    .requestMatchers(PUBLIC_ENDPOINTS)
+                    .permitAll()
+                    .anyRequest()
+                    .hasAnyRole("MANAGER", "ADMIN"))
+        .oauth2ResourceServer(
+            oauth ->
+                oauth
+                    .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                    .authenticationEntryPoint(errorHandler)
+                    .accessDeniedHandler(errorHandler))
+        .addFilterBefore(
+            new InternalKeyFilter(internalApiKey, internalCalls, errorHandler),
+            BearerTokenAuthenticationFilter.class);
 
     return http.build();
   }
@@ -92,5 +90,4 @@ public class SecurityConfig {
     converter.setJwtGrantedAuthoritiesConverter(authorities);
     return converter;
   }
-
 }
