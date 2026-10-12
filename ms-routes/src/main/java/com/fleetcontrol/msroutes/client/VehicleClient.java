@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 /** Client for ms-vehicles. */
 @FeignClient(
     name = "ms-vehicles",
-    url = "${vehicles.service.url}",
+    url = "${VEHICLES_SERVICE_URL}",
     configuration = InternalFeignConfig.class)
 public interface VehicleClient {
   @GetMapping("/api/vehicles/{vehicleId}")
