@@ -3,6 +3,8 @@ package com.fleetcontrol.msroutes.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fleetcontrol.msroutes.entities.Route;
 import com.fleetcontrol.msroutes.enums.RouteStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -26,23 +28,25 @@ import java.util.UUID;
  * @param actualDistanceKm actual distance travelled
  * @param notes additional route notes
  */
+@Schema(description = "A route; fields without a value are omitted")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record RouteResponse(
-    UUID id,
-    UUID vehicleId,
-    UUID driverId,
-    String origin,
-    String destination,
-    Instant plannedStart,
+  @Schema(example = "c8e1b7a4-52d9-4f06-8e3b-1a7d90c4f201") UUID id,
+  @Schema(example = "6f1c0a52-3b7e-4d1f-9a21-8c4d5e6f7a01") UUID vehicleId,
+  @Schema(example = "3b2d8f10-7c4a-4e55-b1a0-5d9e2c7f1a01") UUID driverId,
+  @Schema(example = "Madrid - Centro Logístico") String origin,
+  @Schema(example = "Valencia - Puerto") String destination,
+  @Schema(example = "2026-10-06T07:00:00Z") Instant plannedStart,
+  @Schema(description = "Estimated duration in minutes", example = "240")
     Integer estimatedDurationMin,
-    BigDecimal plannedDistanceKm,
-    RouteStatus status,
-    Instant startedAt,
-    Instant endedAt,
-    Integer startOdometerKm,
-    Integer endOdometerKm,
-    BigDecimal actualDistanceKm,
-    String notes) {
+  @Schema(description = "Planned distance in km", example = "355.0") BigDecimal plannedDistanceKm,
+  @Schema(example = "PLANNED") RouteStatus status,
+  @Schema(example = "2026-10-06T07:04:12Z") Instant startedAt,
+  @Schema(example = "2026-10-06T11:20:45Z") Instant endedAt,
+  @Schema(example = "45210") Integer startOdometerKm,
+  @Schema(example = "45572") Integer endOdometerKm,
+  @Schema(description = "Actual distance in km", example = "362.4") BigDecimal actualDistanceKm,
+  @Schema(example = "Sin incidencias") String notes) {
 
   /**
    * Creates a response from a route entity.

@@ -58,7 +58,6 @@ public class InternalKeyFilter extends OncePerRequestFilter {
       entryPoint.commence(request, response, new BadCredentialsException("Invalid internal key"));
       return;
     }
-    ;
 
     SecurityContext context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(

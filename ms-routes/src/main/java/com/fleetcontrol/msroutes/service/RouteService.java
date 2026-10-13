@@ -35,8 +35,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RouteService {
 
-  private static final String VEHICLES_SERVICE = "ms-vehicle";
-  private static final String DRIVERS_SERVICE = "ms-driver";
+  private static final String VEHICLES_SERVICE = "ms-vehicles";
+  private static final String DRIVERS_SERVICE = "ms-drivers";
 
   private final RouteRepository routeRepository;
   private final VehicleClient vehicleClient;
@@ -84,7 +84,7 @@ public class RouteService {
                 new ApiException(
                     HttpStatus.NOT_FOUND,
                     "ROUTE_NOT_FOUND",
-                    "No exists a route with the Id provided"));
+                    "No route was found with the provided id."));
   }
 
   /**
@@ -155,12 +155,12 @@ public class RouteService {
     if (routeRepository.existsVehicleOverlap(request.vehicleId(), start, end)) {
       throw conflict(
           "ROUTE_OVERLAP",
-          "Vehicle unavailable: an existing route overlap with the specified time interval");
+          "Vehicle unavailable: an existing route overlaps the specified time interval");
     }
     if (routeRepository.existsDriverOverlap(request.driverId(), start, end)) {
       throw conflict(
           "ROUTE_OVERLAP",
-          "Driver unavailable: an existing route overlap with the specified time interval");
+          "Driver unavailable: an existing route overlaps the specified time interval");
     }
   }
 
