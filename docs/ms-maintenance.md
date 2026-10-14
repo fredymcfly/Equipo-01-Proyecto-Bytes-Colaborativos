@@ -10,8 +10,9 @@ Consume a: ms-vehicles.
 
 - Un plan define un intervalo por kilómetros (`intervalKm`), por días (`intervalDays`) o por ambos. Al menos uno es obligatorio y el plan vence cuando se cumple el primero.
 - Un vehículo solo puede tener un plan activo por tipo de mantenimiento.
-- Una tarea diaria (`@Scheduled`, 06:00 UTC) revisa los planes activos que no tienen una orden abierta y crea una orden `PENDING` si faltan 7 días o menos para `nextDueAt`, o si el odómetro del vehículo está a 500 km o menos de `nextDueKm`.
+- Una tarea diaria (`@Scheduled`, 06:00 UTC) revisa los planes activos que no tienen una orden abierta (`PENDING` o `IN_PROGRESS`) y crea una orden `PENDING` si faltan 7 días o menos para `nextDueAt`, o si el odómetro del vehículo está a 500 km o menos de `nextDueKm`. La orden se crea con `scheduledFor` igual a `nextDueAt` cuando se cumple la condición de fecha, y a la fecha de hoy cuando solo se cumple la de kilómetros.
 - Al completar una orden, el plan recalcula su próximo vencimiento a partir de la fecha y del odómetro de ese día.
+- Si el plan solo tiene `intervalKm`, `nextDueAt` queda a `null`; si solo tiene `intervalDays`, `nextDueKm` queda a `null`.
 
 ## Endpoints
 
@@ -51,17 +52,57 @@ Consume a: ms-vehicles.
 }
 ```
 
-**Errores:** `404 VEHICLE_NOT_FOUND`; `409 PLAN_ALREADY_EXISTS` si el vehículo ya tiene un plan activo de ese tipo; `400 VALIDATION_ERROR` si no se indica ningún intervalo.
+**Errores:** `404 VEHICLE_NOT_FOUND` (cuando ms-vehicles no encuentra el vehículo); `409 PLAN_ALREADY_EXISTS` si el vehículo ya tiene un plan activo de ese tipo; `400 VALIDATION_ERROR` si no se indica ningún intervalo; `503 SERVICE_UNAVAILABLE` si ms-vehicles no responde.
 
 ### 2. `GET /api/maintenance/plans`
 
 **Acceso:** MANAGER, ADMIN y llamadas internas.
 
-**Descripción:** lista los planes de mantenimiento.
+**Descripción:** lista paginada de planes de mantenimiento, ordenada por `nextDueAt` ascendente. Los planes sin `nextDueAt` (los que solo tienen `intervalKm`) van al final.
 
-**Query params:** `vehicle` (UUID, opcional), `type` (enum, opcional) y `active` (boolean, opcional).
+**Query params:**
 
-**Response 200 OK:** lista de planes con la misma estructura que la respuesta anterior.
+- `vehicle` (UUID, opcional).
+- `type` (enum, opcional).
+- `active` (boolean, opcional).
+- `page` (int, opcional, por defecto 0) y `size` (int, opcional, por defecto 20, máximo 100).
+
+**Response 200 OK:** página con la estructura habitual (`content`, `page`, `size`, `totalElements`, `totalPages`), donde cada elemento tiene los mismos campos que la respuesta de creación. Los campos sin valor se devuelven a `null`.
+
+```json
+{
+  "content": [
+    {
+      "id": "9d4a6e21-0b3c-4a77-8f15-2c6e7b1d3a01",
+      "vehicleId": "6f1c0a52-3b7e-4d1f-9a21-8c4d5e6f7a01",
+      "type": "OIL_CHANGE",
+      "intervalKm": 15000,
+      "intervalDays": 365,
+      "lastDoneAt": "2026-03-10",
+      "lastDoneKm": 32000,
+      "nextDueAt": "2027-03-10",
+      "nextDueKm": 47000,
+      "active": true
+    },
+    {
+      "id": "9d4a6e21-0b3c-4a77-8f15-2c6e7b1d3a03",
+      "vehicleId": "6f1c0a52-3b7e-4d1f-9a21-8c4d5e6f7a01",
+      "type": "BRAKE_CHECK",
+      "intervalKm": 30000,
+      "intervalDays": null,
+      "lastDoneAt": "2026-05-20",
+      "lastDoneKm": 38000,
+      "nextDueAt": null,
+      "nextDueKm": 68000,
+      "active": true
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 2,
+  "totalPages": 1
+}
+```
 
 ### 3. `GET /api/maintenance/orders`
 
@@ -89,7 +130,12 @@ Consume a: ms-vehicles.
       "type": "OIL_CHANGE",
       "status": "PENDING",
       "scheduledFor": "2026-10-08",
-      "cost": null
+      "startedAt": null,
+      "completedAt": null,
+      "odometerKm": null,
+      "cost": null,
+      "workshop": null,
+      "notes": null
     }
   ],
   "page": 0,
@@ -99,13 +145,32 @@ Consume a: ms-vehicles.
 }
 ```
 
+Cada elemento de `content` es una orden con todos sus campos. Los que todavía no tienen valor (`startedAt`, `completedAt`, `odometerKm`, `cost`, `workshop` y `notes`) se devuelven a `null`.
+
 ### 4. `POST /api/maintenance/orders/{orderId}/start`
 
 **Acceso:** MANAGER, ADMIN.
 
 **Descripción:** inicia una orden pendiente. No lleva body. Cambia la orden a `IN_PROGRESS` y el vehículo a `IN_MAINTENANCE` en ms-vehicles.
 
-**Response 200 OK:** la orden con `status` igual a `IN_PROGRESS` y `startedAt` informado.
+**Response 200 OK:** la orden con `status` igual a `IN_PROGRESS` y `startedAt` informado, con la misma estructura que los elementos del listado de órdenes.
+
+```json
+{
+  "id": "e5b8c3f7-91a2-4d60-b7c4-0a1f6d2e8b01",
+  "planId": "9d4a6e21-0b3c-4a77-8f15-2c6e7b1d3a02",
+  "vehicleId": "6f1c0a52-3b7e-4d1f-9a21-8c4d5e6f7a01",
+  "type": "OIL_CHANGE",
+  "status": "IN_PROGRESS",
+  "scheduledFor": "2026-10-08",
+  "startedAt": "2026-10-08T08:15:00Z",
+  "completedAt": null,
+  "odometerKm": null,
+  "cost": null,
+  "workshop": null,
+  "notes": null
+}
+```
 
 **Errores:**
 
@@ -113,7 +178,7 @@ Consume a: ms-vehicles.
 |---|---|---|
 | 404 | `ORDER_NOT_FOUND` | La orden no existe |
 | 409 | `INVALID_ORDER_STATE` | La orden no está pendiente |
-| 409 | `VEHICLE_NOT_AVAILABLE` | El vehículo está en uso |
+| 409 | `VEHICLE_NOT_AVAILABLE` | El vehículo está en uso (ms-vehicles responde `409 INVALID_STATUS_TRANSITION` y ms-maintenance lo traduce a este código) |
 | 503 | `SERVICE_UNAVAILABLE` | ms-vehicles no responde |
 
 ### 5. `POST /api/maintenance/orders/{orderId}/complete`
@@ -153,7 +218,7 @@ Consume a: ms-vehicles.
 }
 ```
 
-**Errores:** `409 INVALID_ORDER_STATE` si la orden no está en curso; `400 VALIDATION_ERROR` si el coste es negativo; `409 INVALID_ODOMETER` si el odómetro es menor que el del vehículo.
+**Errores:** `404 ORDER_NOT_FOUND` si la orden no existe; `409 INVALID_ORDER_STATE` si la orden no está en curso; `400 VALIDATION_ERROR` si el coste es negativo; `409 INVALID_ODOMETER` si el odómetro es menor que el del vehículo (lo detecta ms-vehicles y ms-maintenance lo propaga con el mismo código); `503 SERVICE_UNAVAILABLE` si ms-vehicles no responde, en cuyo caso la orden no cambia de estado.
 
 ### 6. `GET /api/maintenance/stats`
 
@@ -189,6 +254,8 @@ Consume a: ms-vehicles.
 }
 ```
 
+`upcoming` no depende de `from` ni de `to`: cuenta las órdenes `PENDING` según su `scheduledFor`. `overdue` son las que tienen `scheduledFor` anterior a hoy y `dueIn7Days` las que lo tienen entre hoy y dentro de 7 días (ambos incluidos). Si se indica `vehicle`, el filtro se aplica también a `upcoming`.
+
 ## Modelo de datos
 
 ### MaintenancePlan
@@ -202,8 +269,8 @@ Consume a: ms-vehicles.
 | `intervalDays` | Integer | Intervalo en días (opcional) |
 | `lastDoneAt` | LocalDate | Fecha de la última intervención |
 | `lastDoneKm` | Integer | Odómetro en la última intervención |
-| `nextDueAt` | LocalDate | Fecha del próximo vencimiento |
-| `nextDueKm` | Integer | Odómetro del próximo vencimiento |
+| `nextDueAt` | LocalDate | Fecha del próximo vencimiento (`null` si el plan no tiene `intervalDays`) |
+| `nextDueKm` | Integer | Odómetro del próximo vencimiento (`null` si el plan no tiene `intervalKm`) |
 | `active` | Boolean | Indica si el plan está vigente |
 | `createdAt` | Instant | Fecha de creación |
 
@@ -251,7 +318,7 @@ MaintenanceOrderStatus: PENDING, IN_PROGRESS, COMPLETED
 - `POST /api/maintenance/plans` crea el plan y calcula `nextDueAt` y `nextDueKm`.
 - Sin ningún intervalo se devuelve `400 VALIDATION_ERROR`, y con un segundo plan activo del mismo tipo para el vehículo, `409 PLAN_ALREADY_EXISTS`.
 - Si faltan `lastDoneAt` y `lastDoneKm`, se usan la fecha de hoy y el odómetro actual del vehículo.
-- `GET /api/maintenance/plans` filtra por vehículo, tipo y `active`.
+- `GET /api/maintenance/plans` filtra por vehículo, tipo y `active`, y devuelve una página ordenada por `nextDueAt`.
 
 ### US-13 — Órdenes de mantenimiento: generación y ejecución (5 puntos, Must, semana 2)
 
