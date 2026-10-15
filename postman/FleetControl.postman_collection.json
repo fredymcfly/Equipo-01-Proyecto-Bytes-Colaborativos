@@ -1,0 +1,666 @@
+{
+  "info": {
+    "name": "FleetControl",
+    "description": "Colección de la plataforma FleetControl. Cada microservicio aporta su propia carpeta; ahora mismo solo está implementada la de `ms-fuel`. Antes de lanzar las peticiones, selecciona el entorno `FleetControl - Local`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "serviceUrl",
+      "value": "http://localhost:8087"
+    },
+    {
+      "key": "gatewayUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "vehicleId",
+      "value": "6f1c0a52-3b7e-4d1f-9a21-8c4d5e6f7a01"
+    }
+  ],
+  "item": [
+    {
+      "name": "ms-fuel",
+      "description": "Repostajes y consumo. Puerto 8087. `serviceUrl` apunta al servicio directo; con `gatewayUrl` las rutas pasan por el gateway (puerto 8080).",
+      "item": [
+        {
+          "name": "Crear repostaje",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('devuelve id y vehicleId', () => {",
+                  "  pm.expect(body.id).to.be.a('string');",
+                  "  pm.expect(body.vehicleId).to.eql(pm.variables.replaceIn('{{vehicleId}}'));",
+                  "});",
+                  "pm.test('calcula totalCost y toma fuelType del vehículo', () => {",
+                  "  pm.expect(body.totalCost).to.be.a('number');",
+                  "  pm.expect(body.fuelType).to.be.oneOf(['DIESEL', 'GASOLINE', 'LPG', 'HYBRID']);",
+                  "});",
+                  "pm.test('consumptionL100km es number o null', () => {",
+                  "  pm.expect(body).to.have.property('consumptionL100km');",
+                  "  if (body.consumptionL100km !== null) {",
+                  "    pm.expect(body.consumptionL100km).to.be.a('number');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"refueledAt\": \"2026-10-06T12:15:00Z\",\n  \"liters\": 58.4,\n  \"pricePerLiter\": 1.62,\n  \"odometerKm\": 45572,\n  \"fullTank\": true,\n  \"station\": \"Repsol A-3 km 112\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/refuels",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "refuels"
+              ]
+            },
+            "description": "Registra un repostaje. Requiere que el vehículo exista en ms-vehicles."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar repostajes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('página con content, page, size, totalElements y totalPages', () => {",
+                  "  pm.expect(body.content).to.be.an('array');",
+                  "  pm.expect(body.page).to.be.a('number');",
+                  "  pm.expect(body.size).to.be.a('number');",
+                  "  pm.expect(body.totalElements).to.be.a('number');",
+                  "  pm.expect(body.totalPages).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/refuels",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "refuels"
+              ]
+            },
+            "description": "Listado paginado, ordenado por refueledAt descendente."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar repostajes con filtros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('respeta el tamaño de página pedido', () => pm.expect(body.size).to.eql(10));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/refuels?vehicle={{vehicleId}}&from=2026-09-01&to=2026-09-30&page=0&size=10",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "refuels"
+              ],
+              "query": [
+                {
+                  "key": "vehicle",
+                  "value": "{{vehicleId}}"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Filtra por vehículo y rango de fechas (from y to van juntos)."
+          },
+          "response": []
+        },
+        {
+          "name": "Consumo por vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('devuelve from, to y vehicles', () => {",
+                  "  pm.expect(body.from).to.eql('2026-09-01');",
+                  "  pm.expect(body.to).to.eql('2026-09-30');",
+                  "  pm.expect(body.vehicles).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/consumption?from=2026-09-01&to=2026-09-30",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "consumption"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-30"
+                }
+              ]
+            },
+            "description": "Consumo agregado por vehículo, ordenado por coste descendente. Requiere ms-vehicles."
+          },
+          "response": []
+        },
+        {
+          "name": "Estadísticas DAY",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('serie diaria con granularidad DAY', () => {",
+                  "  pm.expect(body.granularity).to.eql('DAY');",
+                  "  pm.expect(body.series).to.be.an('array');",
+                  "  pm.expect(body.series.length).to.eql(30);",
+                  "  pm.expect(body.series[0]).to.have.property('period');",
+                  "});",
+                  "pm.test('totales', () => {",
+                  "  pm.expect(body.totals.liters).to.be.a('number');",
+                  "  pm.expect(body.totals.cost).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/stats?from=2026-09-01&to=2026-09-30&granularity=DAY",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "granularity",
+                  "value": "DAY"
+                }
+              ]
+            },
+            "description": "Serie temporal de litros, coste y consumo de la flota, con los periodos vacíos a 0."
+          },
+          "response": []
+        },
+        {
+          "name": "Estadísticas WEEK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('periodos semanales que empiezan en lunes', () => {",
+                  "  pm.expect(body.granularity).to.eql('WEEK');",
+                  "  body.series.forEach((p) => pm.expect(new Date(p.period).getUTCDay()).to.eql(1));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/stats?from=2026-09-01&to=2026-09-30&granularity=WEEK",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "granularity",
+                  "value": "WEEK"
+                }
+              ]
+            },
+            "description": "Serie semanal; el periodo es el lunes de cada semana."
+          },
+          "response": []
+        },
+        {
+          "name": "Estadísticas MONTH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('periodos mensuales que empiezan el día 1', () => {",
+                  "  pm.expect(body.granularity).to.eql('MONTH');",
+                  "  body.series.forEach((p) => pm.expect(p.period.endsWith('-01')).to.be.true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/stats?from=2026-09-01&to=2026-11-30&granularity=MONTH",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-11-30"
+                },
+                {
+                  "key": "granularity",
+                  "value": "MONTH"
+                }
+              ]
+            },
+            "description": "Serie mensual; el periodo es el día 1 de cada mes."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear repostaje - litros inválidos (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('VALIDATION_ERROR con details y timestamp', () => {",
+                  "  pm.expect(body.error).to.eql('VALIDATION_ERROR');",
+                  "  pm.expect(body.details).to.be.an('array');",
+                  "  pm.expect(body.timestamp).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"refueledAt\": \"2026-10-06T12:15:00Z\",\n  \"liters\": 0,\n  \"pricePerLiter\": 1.62,\n  \"odometerKm\": 45572,\n  \"fullTank\": true,\n  \"station\": \"Repsol A-3 km 112\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/refuels",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "refuels"
+              ]
+            },
+            "description": "liters es obligatoriamente positivo."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear repostaje - odómetro menor (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('INVALID_ODOMETER', () => pm.expect(pm.response.json().error).to.eql('INVALID_ODOMETER'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"refueledAt\": \"2026-10-07T12:15:00Z\",\n  \"liters\": 20.0,\n  \"pricePerLiter\": 1.62,\n  \"odometerKm\": 1,\n  \"fullTank\": true,\n  \"station\": \"Repsol A-3 km 112\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/refuels",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "refuels"
+              ]
+            },
+            "description": "Requiere que el vehículo ya tenga un repostaje con odómetro mayor."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear repostaje - vehículo inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('VEHICLE_NOT_FOUND', () => pm.expect(pm.response.json().error).to.eql('VEHICLE_NOT_FOUND'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"00000000-0000-0000-0000-000000000000\",\n  \"refueledAt\": \"2026-10-06T12:15:00Z\",\n  \"liters\": 40.0,\n  \"pricePerLiter\": 1.62,\n  \"odometerKm\": 45572,\n  \"fullTank\": true,\n  \"station\": \"Repsol A-3 km 112\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/refuels",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "refuels"
+              ]
+            },
+            "description": "Requiere ms-vehicles en marcha para distinguir 404 de 503."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear repostaje - ms-vehicles no responde (503)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('503 Service Unavailable', () => pm.response.to.have.status(503));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('SERVICE_UNAVAILABLE con service', () => {",
+                  "  pm.expect(body.error).to.eql('SERVICE_UNAVAILABLE');",
+                  "  pm.expect(body.service).to.eql('ms-vehicles');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"refueledAt\": \"2026-10-06T12:15:00Z\",\n  \"liters\": 40.0,\n  \"pricePerLiter\": 1.62,\n  \"odometerKm\": 45572,\n  \"fullTank\": true,\n  \"station\": \"Repsol A-3 km 112\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/refuels",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "refuels"
+              ]
+            },
+            "description": "Se observa cuando ms-vehicles está caído (fallback del circuit breaker)."
+          },
+          "response": []
+        },
+        {
+          "name": "Consumo - faltan from y to (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('VALIDATION_ERROR', () => pm.expect(pm.response.json().error).to.eql('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/consumption",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "consumption"
+              ]
+            },
+            "description": "from y to son obligatorios."
+          },
+          "response": []
+        },
+        {
+          "name": "Estadísticas - granularity inválida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('VALIDATION_ERROR', () => pm.expect(pm.response.json().error).to.eql('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serviceUrl}}/api/fuel/stats?from=2026-09-01&to=2026-09-30&granularity=YEAR",
+              "host": [
+                "{{serviceUrl}}"
+              ],
+              "path": [
+                "api",
+                "fuel",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-09-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-30"
+                },
+                {
+                  "key": "granularity",
+                  "value": "YEAR"
+                }
+              ]
+            },
+            "description": "granularity solo admite DAY, WEEK o MONTH."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

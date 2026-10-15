@@ -37,4 +37,5 @@ replay_pid*
 !docker/postgres/*.sql
 postgres-data/
 pgdata/
+.opencode
 

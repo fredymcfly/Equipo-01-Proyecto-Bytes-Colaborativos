@@ -1,10 +1,10 @@
 package com.fleetcontrol.msmaintenance;
 
+import com.fleetcontrol.msmaintenance.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class MsMaintenanceApplicationTests {
+/** Checks that the application starts and Flyway applies the migrations on a real PostgreSQL. */
+class MsMaintenanceApplicationTests extends AbstractIntegrationTest {
 
   @Test
   void contextLoads() {}
