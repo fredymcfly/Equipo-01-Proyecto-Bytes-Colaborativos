@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/routes")
 @RequiredArgsConstructor
-public class RouteController implements RouteApi{
+public class RouteController implements RouteApi {
 
   private final RouteService routeService;
 
@@ -28,20 +28,20 @@ public class RouteController implements RouteApi{
   public RouteResponse planRoute(CreateRouteRequest request, Jwt jwt) {
     if (jwt == null) {
       throw new ApiException(
-              HttpStatus.FORBIDDEN, "FORBIDDEN", "This operation requires an authentication user");
+          HttpStatus.FORBIDDEN, "FORBIDDEN", "This operation requires an authentication user");
     }
     return routeService.planRoute(request, UUID.fromString(jwt.getSubject()));
   }
 
   @Override
   public PageResponse<RouteResponse> listRoutes(
-          RouteStatus status,
-          UUID vehicleId,
-          UUID driverId,
-          LocalDate from,
-          LocalDate to,
-          int page,
-          int size) {
+      RouteStatus status,
+      UUID vehicleId,
+      UUID driverId,
+      LocalDate from,
+      LocalDate to,
+      int page,
+      int size) {
     return routeService.listRoutes(status, vehicleId, driverId, from, to, page, size);
   }
 
@@ -49,5 +49,4 @@ public class RouteController implements RouteApi{
   public RouteResponse getRoute(UUID routeId) {
     return routeService.getRoute(routeId);
   }
-
 }
