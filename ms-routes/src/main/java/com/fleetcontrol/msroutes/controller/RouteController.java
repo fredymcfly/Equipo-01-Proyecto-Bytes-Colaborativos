@@ -4,7 +4,7 @@ import com.fleetcontrol.msroutes.dto.CreateRouteRequest;
 import com.fleetcontrol.msroutes.dto.PageResponse;
 import com.fleetcontrol.msroutes.dto.RouteResponse;
 import com.fleetcontrol.msroutes.enums.RouteStatus;
-import com.fleetcontrol.msroutes.exeption.ApiException;
+import com.fleetcontrol.msroutes.exception.ApiException;
 import com.fleetcontrol.msroutes.service.RouteService;
 import java.time.LocalDate;
 import java.util.UUID;

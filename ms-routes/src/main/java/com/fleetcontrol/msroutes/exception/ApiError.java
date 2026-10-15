@@ -1,4 +1,4 @@
-package com.fleetcontrol.msroutes.exeption;
+package com.fleetcontrol.msroutes.exception;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;

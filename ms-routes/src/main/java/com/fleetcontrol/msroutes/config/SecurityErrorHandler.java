@@ -1,7 +1,7 @@
 package com.fleetcontrol.msroutes.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fleetcontrol.msroutes.exeption.ApiError;
+import com.fleetcontrol.msroutes.exception.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;

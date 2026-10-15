@@ -1,4 +1,4 @@
-package com.fleetcontrol.msroutes.exeption;
+package com.fleetcontrol.msroutes.exception;
 
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
