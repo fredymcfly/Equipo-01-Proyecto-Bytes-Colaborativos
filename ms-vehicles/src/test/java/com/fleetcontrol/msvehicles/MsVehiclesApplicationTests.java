@@ -1,10 +1,9 @@
 package com.fleetcontrol.msvehicles;
 
+import com.fleetcontrol.msvehicles.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class MsVehiclesApplicationTests {
+class MsVehiclesApplicationTests extends AbstractIntegrationTest {
 
   @Test
   void contextLoads() {}
