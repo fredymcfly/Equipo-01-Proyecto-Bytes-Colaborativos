@@ -1,15 +1,20 @@
 package com.fleetcontrol.msvehicles.exception;
 
+import com.fleetcontrol.msvehicles.constants.ErrorConstants;
+import com.fleetcontrol.msvehicles.models.dto.response.ErrorDetail;
+import com.fleetcontrol.msvehicles.models.dto.response.ErrorResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /** Translates exceptions into the shared error contract. */
 @RestControllerAdvice
@@ -18,8 +23,8 @@ public class GlobalExceptionHandler {
   /** Maps any domain error to its HTTP status and contract body. */
   @ExceptionHandler(ApiException.class)
   public ResponseEntity<ErrorResponse> handleApiException(ApiException exception) {
-    ErrorCode code = exception.code();
-    return ResponseEntity.status(code.status()).body(errorBody(code, exception.getMessage()));
+    return ResponseEntity.status(exception.status())
+        .body(errorBody(exception.code(), exception.getMessage()));
   }
 
   /** Maps request body validation failures to 400 with field-level details. */
@@ -51,23 +56,38 @@ public class GlobalExceptionHandler {
     return validationError(List.of());
   }
 
+  /** Maps parameters that cannot be converted, such as an unknown enum value or id, to 400. */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleTypeMismatch(
+      MethodArgumentTypeMismatchException exception) {
+    return validationError(
+        List.of(new ErrorDetail(exception.getName(), ErrorConstants.Reason.INVALID_VALUE)));
+  }
+
   /** Safety net for a duplicated plate under concurrent requests. */
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
       DataIntegrityViolationException exception) {
-    ErrorCode code = ErrorCode.VEHICLE_ALREADY_EXISTS;
-    return ResponseEntity.status(code.status()).body(errorBody(code, code.defaultMessage()));
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(
+            errorBody(
+                ErrorConstants.Code.VEHICLE_ALREADY_EXISTS,
+                ErrorConstants.Message.VEHICLE_ALREADY_EXISTS));
   }
 
   private ResponseEntity<ErrorResponse> validationError(List<ErrorDetail> details) {
-    ErrorCode code = ErrorCode.VALIDATION_ERROR;
     ErrorResponse body =
-        new ErrorResponse(code.name(), code.defaultMessage(), details, null, Instant.now());
-    return ResponseEntity.status(code.status()).body(body);
+        new ErrorResponse(
+            ErrorConstants.Code.VALIDATION_ERROR,
+            ErrorConstants.Message.VALIDATION_ERROR,
+            details,
+            null,
+            Instant.now());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
   }
 
-  private ErrorResponse errorBody(ErrorCode code, String message) {
-    return new ErrorResponse(code.name(), message, null, null, Instant.now());
+  private ErrorResponse errorBody(String code, String message) {
+    return new ErrorResponse(code, message, null, null, Instant.now());
   }
 
   private String lastPathNode(ConstraintViolation<?> violation) {
