@@ -1,10 +1,10 @@
 package com.fleetcontrol.msvehicles.mapper;
 
-import com.fleetcontrol.msvehicles.dto.CreateVehicleRequest;
-import com.fleetcontrol.msvehicles.dto.UpdateVehicleRequest;
-import com.fleetcontrol.msvehicles.dto.VehicleResponse;
-import com.fleetcontrol.msvehicles.dto.VehicleSummaryResponse;
-import com.fleetcontrol.msvehicles.model.Vehicle;
+import com.fleetcontrol.msvehicles.models.dto.request.CreateVehicleRequest;
+import com.fleetcontrol.msvehicles.models.dto.request.UpdateVehicleRequest;
+import com.fleetcontrol.msvehicles.models.dto.response.VehicleResponse;
+import com.fleetcontrol.msvehicles.models.dto.response.VehicleSummaryResponse;
+import com.fleetcontrol.msvehicles.models.entities.Vehicle;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
