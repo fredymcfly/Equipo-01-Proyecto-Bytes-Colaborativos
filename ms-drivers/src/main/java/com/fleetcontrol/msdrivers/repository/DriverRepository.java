@@ -1,17 +1,15 @@
-
 package com.fleetcontrol.msdrivers.repository;
 
-import com.fleetcontrol.msdrivers.model.Driver;
-import com.fleetcontrol.msdrivers.model.DriverStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-
+import com.fleetcontrol.msdrivers.models.entities.Driver;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface DriverRepository extends JpaRepository<Driver, UUID> {
+/** Data access for fleet drivers. */
+public interface DriverRepository
+    extends JpaRepository<Driver, UUID>, JpaSpecificationExecutor<Driver> {
 
-    boolean existsByLicenseNumber(String licenseNumber);
+  boolean existsByLicenseNumber(String licenseNumber);
 
-    Page<Driver> findByStatus(DriverStatus status, Pageable pageable);
+  boolean existsByLicenseNumberAndIdNot(String licenseNumber, UUID id);
 }
