@@ -1,8 +1,8 @@
 package com.fleetcontrol.msvehicles.repository;
 
-import com.fleetcontrol.msvehicles.model.Vehicle;
-import com.fleetcontrol.msvehicles.model.VehicleStatus;
-import com.fleetcontrol.msvehicles.model.VehicleType;
+import com.fleetcontrol.msvehicles.models.entities.Vehicle;
+import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
+import com.fleetcontrol.msvehicles.models.enums.VehicleType;
 import org.springframework.data.jpa.domain.Specification;
 
 /** Reusable filters for vehicle queries. */
