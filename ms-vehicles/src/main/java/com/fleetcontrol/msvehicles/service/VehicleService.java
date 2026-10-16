@@ -1,22 +1,26 @@
 package com.fleetcontrol.msvehicles.service;
 
-import com.fleetcontrol.msvehicles.dto.CreateVehicleRequest;
-import com.fleetcontrol.msvehicles.dto.PageResponse;
-import com.fleetcontrol.msvehicles.dto.UpdateVehicleRequest;
-import com.fleetcontrol.msvehicles.dto.VehicleResponse;
-import com.fleetcontrol.msvehicles.dto.VehicleStatusRequest;
-import com.fleetcontrol.msvehicles.dto.VehicleSummaryResponse;
+import com.fleetcontrol.msvehicles.constants.SecurityConstants;
 import com.fleetcontrol.msvehicles.exception.ForbiddenException;
 import com.fleetcontrol.msvehicles.exception.InvalidOdometerException;
 import com.fleetcontrol.msvehicles.exception.InvalidStatusTransitionException;
 import com.fleetcontrol.msvehicles.exception.VehicleAlreadyExistsException;
 import com.fleetcontrol.msvehicles.exception.VehicleNotFoundException;
 import com.fleetcontrol.msvehicles.mapper.VehicleMapper;
-import com.fleetcontrol.msvehicles.model.Vehicle;
-import com.fleetcontrol.msvehicles.model.VehicleStatus;
-import com.fleetcontrol.msvehicles.model.VehicleType;
+import com.fleetcontrol.msvehicles.models.dto.request.CreateVehicleRequest;
+import com.fleetcontrol.msvehicles.models.dto.request.UpdateVehicleRequest;
+import com.fleetcontrol.msvehicles.models.dto.request.VehicleStatusRequest;
+import com.fleetcontrol.msvehicles.models.dto.response.FleetSummaryResponse;
+import com.fleetcontrol.msvehicles.models.dto.response.PageResponse;
+import com.fleetcontrol.msvehicles.models.dto.response.VehicleResponse;
+import com.fleetcontrol.msvehicles.models.dto.response.VehicleSummaryResponse;
+import com.fleetcontrol.msvehicles.models.entities.Vehicle;
+import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
+import com.fleetcontrol.msvehicles.models.enums.VehicleType;
 import com.fleetcontrol.msvehicles.repository.VehicleRepository;
 import com.fleetcontrol.msvehicles.repository.VehicleSpecifications;
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
@@ -111,11 +115,28 @@ public class VehicleService {
     return mapper.toResponse(repository.save(vehicle));
   }
 
+  /** Returns how many vehicles there are by status and by type, with zero for the empty ones. */
+  public FleetSummaryResponse summary() {
+    Map<VehicleStatus, Long> byStatus = new EnumMap<>(VehicleStatus.class);
+    Arrays.stream(VehicleStatus.values()).forEach(status -> byStatus.put(status, 0L));
+    repository
+        .countGroupedByStatus()
+        .forEach(count -> byStatus.put(count.getVehicleStatus(), count.getTotal()));
+    Map<VehicleType, Long> byType = new EnumMap<>(VehicleType.class);
+    Arrays.stream(VehicleType.values()).forEach(type -> byType.put(type, 0L));
+    repository
+        .countGroupedByType()
+        .forEach(count -> byType.put(count.getVehicleType(), count.getTotal()));
+    long total = byStatus.values().stream().mapToLong(Long::longValue).sum();
+    return new FleetSummaryResponse(total, byStatus, byType);
+  }
+
   private static boolean isAdmin() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String adminAuthority = SecurityConstants.ROLE_AUTHORITY_PREFIX + SecurityConstants.ROLE_ADMIN;
     return authentication != null
         && authentication.getAuthorities().stream()
-            .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+            .anyMatch(authority -> adminAuthority.equals(authority.getAuthority()));
   }
 
   private Vehicle findVehicle(UUID vehicleId) {
