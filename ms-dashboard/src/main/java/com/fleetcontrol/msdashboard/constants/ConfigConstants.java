@@ -16,6 +16,7 @@ public final class ConfigConstants {
     public static final String FLEET_JWT = "fleet.jwt";
     public static final String FLEET_INTERNAL = "fleet.internal";
     public static final String FLEET_CACHE = "fleet.cache";
+    public static final String FLEET_SERVICES = "fleet.services";
   }
 
   /** Names of the services this one talks to. */
@@ -31,11 +32,11 @@ public final class ConfigConstants {
   /** Placeholders with the base URL of each source service. */
   @NoArgsConstructor(access = AccessLevel.PRIVATE)
   public static final class Urls {
-    public static final String VEHICLES = "${vehicles.service.url}";
-    public static final String ROUTES = "${routes.service.url}";
-    public static final String FUEL = "${fuel.service.url}";
-    public static final String MAINTENANCE = "${maintenance.service.url}";
-    public static final String ALERTS = "${alerts.service.url}";
+    public static final String VEHICLES = "${fleet.services.vehicles.url}";
+    public static final String ROUTES = "${fleet.services.routes.url}";
+    public static final String FUEL = "${fleet.services.fuel.url}";
+    public static final String MAINTENANCE = "${fleet.services.maintenance.url}";
+    public static final String ALERTS = "${fleet.services.alerts.url}";
   }
 
   /** Thread pool that runs the calls to the source services in parallel. */
