@@ -1,10 +1,9 @@
 package com.fleetcontrol.msfuel;
 
+import com.fleetcontrol.msfuel.support.PostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class MsFuelApplicationTests {
+class MsFuelApplicationTests extends PostgresIntegrationTest {
 
   @Test
   void contextLoads() {}

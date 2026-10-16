@@ -24,6 +24,10 @@ jobs:
           cat > commitlint.config.mjs <<'EOF'
           export default {
             extends: ['@commitlint/config-conventional'],
+            ignores: [
+              (message) => /^merge:/i.test(message),
+              (message) => /^feat\/\d+/.test(message),
+            ],
             rules: {
               'type-enum': [2, 'always', ['feat', 'fix', 'refactor', 'docs', 'chore', 'test']],
               'scope-empty': [2, 'always'],

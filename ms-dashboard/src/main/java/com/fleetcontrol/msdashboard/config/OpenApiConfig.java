@@ -1,0 +1,34 @@
+package com.fleetcontrol.msdashboard.config;
+
+import com.fleetcontrol.msdashboard.constants.SwaggerConstants;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/** OpenAPI metadata and the JWT scheme offered by the Authorize button of Swagger UI. */
+@Configuration
+public class OpenApiConfig {
+
+  /** Describes the API and declares the JWT scheme. */
+  @Bean
+  public OpenAPI openApi() {
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title(SwaggerConstants.Api.TITLE)
+                .description(SwaggerConstants.Api.DESCRIPTION)
+                .version(SwaggerConstants.Api.VERSION))
+        .components(
+            new Components()
+                .addSecuritySchemes(
+                    SwaggerConstants.Security.BEARER,
+                    new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme(SwaggerConstants.Security.BEARER_SCHEME)
+                        .bearerFormat(SwaggerConstants.Security.BEARER_FORMAT)
+                        .description(SwaggerConstants.Security.BEARER_DESCRIPTION)));
+  }
+}
