@@ -1,5 +1,8 @@
-package com.fleetcontrol.msvehicles.model;
+package com.fleetcontrol.msvehicles.models.entities;
 
+import com.fleetcontrol.msvehicles.models.enums.FuelType;
+import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
+import com.fleetcontrol.msvehicles.models.enums.VehicleType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -65,8 +68,12 @@ public class Vehicle {
 
   @PrePersist
   void onCreate() {
-    createdAt = Instant.now();
-    updatedAt = createdAt;
+    if (createdAt == null) {
+      createdAt = Instant.now();
+    }
+    if (updatedAt == null) {
+      updatedAt = createdAt;
+    }
   }
 
   @PreUpdate

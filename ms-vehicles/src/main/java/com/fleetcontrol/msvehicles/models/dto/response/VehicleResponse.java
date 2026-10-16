@@ -1,8 +1,8 @@
-package com.fleetcontrol.msvehicles.dto;
+package com.fleetcontrol.msvehicles.models.dto.response;
 
-import com.fleetcontrol.msvehicles.model.FuelType;
-import com.fleetcontrol.msvehicles.model.VehicleStatus;
-import com.fleetcontrol.msvehicles.model.VehicleType;
+import com.fleetcontrol.msvehicles.models.enums.FuelType;
+import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
+import com.fleetcontrol.msvehicles.models.enums.VehicleType;
 import java.time.Instant;
 import java.util.UUID;
 

@@ -1,4 +1,4 @@
-package com.fleetcontrol.msvehicles.model;
+package com.fleetcontrol.msvehicles.models.enums;
 
 /** Kinds of vehicle in the fleet. */
 public enum VehicleType {

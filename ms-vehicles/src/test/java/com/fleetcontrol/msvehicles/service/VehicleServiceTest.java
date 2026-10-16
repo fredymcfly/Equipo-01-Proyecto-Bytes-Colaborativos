@@ -4,23 +4,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fleetcontrol.msvehicles.dto.CreateVehicleRequest;
-import com.fleetcontrol.msvehicles.dto.UpdateVehicleRequest;
-import com.fleetcontrol.msvehicles.dto.VehicleResponse;
-import com.fleetcontrol.msvehicles.dto.VehicleStatusRequest;
 import com.fleetcontrol.msvehicles.exception.ForbiddenException;
 import com.fleetcontrol.msvehicles.exception.InvalidOdometerException;
 import com.fleetcontrol.msvehicles.exception.InvalidStatusTransitionException;
 import com.fleetcontrol.msvehicles.exception.VehicleAlreadyExistsException;
 import com.fleetcontrol.msvehicles.exception.VehicleNotFoundException;
 import com.fleetcontrol.msvehicles.mapper.VehicleMapper;
-import com.fleetcontrol.msvehicles.model.FuelType;
-import com.fleetcontrol.msvehicles.model.Vehicle;
-import com.fleetcontrol.msvehicles.model.VehicleStatus;
-import com.fleetcontrol.msvehicles.model.VehicleType;
+import com.fleetcontrol.msvehicles.models.dto.request.CreateVehicleRequest;
+import com.fleetcontrol.msvehicles.models.dto.request.UpdateVehicleRequest;
+import com.fleetcontrol.msvehicles.models.dto.request.VehicleStatusRequest;
+import com.fleetcontrol.msvehicles.models.dto.response.FleetSummaryResponse;
+import com.fleetcontrol.msvehicles.models.dto.response.VehicleResponse;
+import com.fleetcontrol.msvehicles.models.entities.Vehicle;
+import com.fleetcontrol.msvehicles.models.enums.FuelType;
+import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
+import com.fleetcontrol.msvehicles.models.enums.VehicleType;
 import com.fleetcontrol.msvehicles.repository.VehicleRepository;
 import java.util.List;
 import java.util.Optional;
@@ -233,9 +235,59 @@ class VehicleServiceTest {
     assertThat(vehicle.getStatus()).isEqualTo(VehicleStatus.AVAILABLE);
   }
 
+  @Test
+  void summaryCountsEveryStatusAndTypeEvenWhenEmpty() {
+    List<VehicleRepository.StatusCount> statusCounts =
+        List.of(statusCount(VehicleStatus.AVAILABLE, 14), statusCount(VehicleStatus.IN_USE, 8));
+    List<VehicleRepository.TypeCount> typeCounts =
+        List.of(typeCount(VehicleType.CAR, 9), typeCount(VehicleType.VAN, 13));
+    when(repository.countGroupedByStatus()).thenReturn(statusCounts);
+    when(repository.countGroupedByType()).thenReturn(typeCounts);
+
+    FleetSummaryResponse summary = service.summary();
+
+    assertThat(summary.total()).isEqualTo(22);
+    assertThat(summary.byStatus())
+        .containsEntry(VehicleStatus.AVAILABLE, 14L)
+        .containsEntry(VehicleStatus.IN_USE, 8L)
+        .containsEntry(VehicleStatus.IN_MAINTENANCE, 0L)
+        .containsEntry(VehicleStatus.OUT_OF_SERVICE, 0L);
+    assertThat(summary.byType())
+        .containsEntry(VehicleType.CAR, 9L)
+        .containsEntry(VehicleType.VAN, 13L)
+        .containsEntry(VehicleType.TRUCK, 0L)
+        .containsEntry(VehicleType.MOTORCYCLE, 0L);
+  }
+
+  @Test
+  void summaryOfAnEmptyFleetIsAllZeros() {
+    when(repository.countGroupedByStatus()).thenReturn(List.of());
+    when(repository.countGroupedByType()).thenReturn(List.of());
+
+    FleetSummaryResponse summary = service.summary();
+
+    assertThat(summary.total()).isZero();
+    assertThat(summary.byStatus()).hasSize(VehicleStatus.values().length).containsValue(0L);
+    assertThat(summary.byType()).hasSize(VehicleType.values().length).containsValue(0L);
+  }
+
   @AfterEach
   void clearSecurityContext() {
     SecurityContextHolder.clearContext();
+  }
+
+  private static VehicleRepository.StatusCount statusCount(VehicleStatus status, long total) {
+    VehicleRepository.StatusCount count = mock(VehicleRepository.StatusCount.class);
+    when(count.getVehicleStatus()).thenReturn(status);
+    when(count.getTotal()).thenReturn(total);
+    return count;
+  }
+
+  private static VehicleRepository.TypeCount typeCount(VehicleType type, long total) {
+    VehicleRepository.TypeCount count = mock(VehicleRepository.TypeCount.class);
+    when(count.getVehicleType()).thenReturn(type);
+    when(count.getTotal()).thenReturn(total);
+    return count;
   }
 
   private static void setRole(String authority) {

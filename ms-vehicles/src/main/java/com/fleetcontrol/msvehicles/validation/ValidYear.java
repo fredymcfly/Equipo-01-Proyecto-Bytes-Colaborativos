@@ -1,5 +1,6 @@
-package com.fleetcontrol.msvehicles.dto;
+package com.fleetcontrol.msvehicles.validation;
 
+import com.fleetcontrol.msvehicles.constants.BusinessConstants;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.Documented;
@@ -16,7 +17,7 @@ import java.lang.annotation.Target;
 public @interface ValidYear {
 
   /** Default violation message, in English like the rest of the contract. */
-  String message() default "must be between 1990 and next year";
+  String message() default "must be between " + BusinessConstants.MIN_YEAR + " and next year";
 
   /** Validation groups this constraint belongs to. */
   Class<?>[] groups() default {};

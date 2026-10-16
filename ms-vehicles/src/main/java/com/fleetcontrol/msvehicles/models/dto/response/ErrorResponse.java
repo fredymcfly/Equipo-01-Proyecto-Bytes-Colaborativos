@@ -1,4 +1,4 @@
-package com.fleetcontrol.msvehicles.exception;
+package com.fleetcontrol.msvehicles.models.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;

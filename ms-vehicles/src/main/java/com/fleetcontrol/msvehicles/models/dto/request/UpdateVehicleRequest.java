@@ -1,7 +1,8 @@
-package com.fleetcontrol.msvehicles.dto;
+package com.fleetcontrol.msvehicles.models.dto.request;
 
-import com.fleetcontrol.msvehicles.model.FuelType;
-import com.fleetcontrol.msvehicles.model.VehicleType;
+import com.fleetcontrol.msvehicles.models.enums.FuelType;
+import com.fleetcontrol.msvehicles.models.enums.VehicleType;
+import com.fleetcontrol.msvehicles.validation.ValidYear;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

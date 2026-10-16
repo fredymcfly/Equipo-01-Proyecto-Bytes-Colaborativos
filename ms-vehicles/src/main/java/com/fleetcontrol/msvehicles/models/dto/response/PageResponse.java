@@ -1,4 +1,4 @@
-package com.fleetcontrol.msvehicles.dto;
+package com.fleetcontrol.msvehicles.models.dto.response;
 
 import java.util.List;
 import org.springframework.data.domain.Page;

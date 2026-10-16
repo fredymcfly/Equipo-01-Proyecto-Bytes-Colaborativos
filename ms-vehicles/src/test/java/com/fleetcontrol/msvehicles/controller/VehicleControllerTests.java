@@ -9,35 +9,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fleetcontrol.msvehicles.dto.CreateVehicleRequest;
-import com.fleetcontrol.msvehicles.dto.UpdateVehicleRequest;
-import com.fleetcontrol.msvehicles.dto.VehicleStatusRequest;
-import com.fleetcontrol.msvehicles.model.FuelType;
-import com.fleetcontrol.msvehicles.model.VehicleStatus;
-import com.fleetcontrol.msvehicles.model.VehicleType;
+import com.fleetcontrol.msvehicles.models.dto.request.CreateVehicleRequest;
+import com.fleetcontrol.msvehicles.models.dto.request.UpdateVehicleRequest;
+import com.fleetcontrol.msvehicles.models.dto.request.VehicleStatusRequest;
+import com.fleetcontrol.msvehicles.models.enums.FuelType;
+import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
+import com.fleetcontrol.msvehicles.models.enums.VehicleType;
+import com.fleetcontrol.msvehicles.support.AbstractIntegrationTest;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Integration tests for the vehicle endpoints. */
-@SpringBootTest
-@AutoConfigureMockMvc
 @Transactional
 @WithMockUser(roles = "MANAGER")
-class VehicleControllerTests {
+class VehicleControllerTests extends AbstractIntegrationTest {
 
   private static final String ENDPOINT = "/api/vehicles";
   private static final String PLATE = "IT-4821-KDF";
   private static final String MAKE = "Ford";
   private static final String MODEL = "Transit";
 
-  @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
 
   @Test
@@ -230,6 +225,62 @@ class VehicleControllerTests {
                 .content("{}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+  }
+
+  @Test
+  void filtersByTypeStatusAndPartialPlate() throws Exception {
+    saveVehicle("1234-ABC", VehicleType.TRUCK, VehicleStatus.IN_USE);
+    saveVehicle("5678-XYZ", VehicleType.CAR, VehicleStatus.AVAILABLE);
+
+    mockMvc
+        .perform(get(ENDPOINT).param("type", "TRUCK"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].plate").value("1234-ABC"));
+    mockMvc
+        .perform(get(ENDPOINT).param("status", "AVAILABLE"))
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].plate").value("5678-XYZ"));
+    mockMvc
+        .perform(get(ENDPOINT).param("plate", "abc"))
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].plate").value("1234-ABC"));
+  }
+
+  @Test
+  void rejectsUnknownEnumFilter() throws Exception {
+    mockMvc
+        .perform(get(ENDPOINT).param("status", "FLYING"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
+        .andExpect(jsonPath("$.details[0].field").value("status"));
+  }
+
+  @Test
+  void rejectsMalformedVehicleId() throws Exception {
+    mockMvc
+        .perform(get(ENDPOINT + "/not-a-uuid"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+  }
+
+  @Test
+  void summaryCountsVehiclesByStatusAndTypeIncludingZeros() throws Exception {
+    saveVehicle("1111-AAA", VehicleType.VAN, VehicleStatus.AVAILABLE);
+    saveVehicle("2222-BBB", VehicleType.TRUCK, VehicleStatus.IN_USE);
+
+    mockMvc
+        .perform(get(ENDPOINT + "/summary"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.byStatus.AVAILABLE").value(1))
+        .andExpect(jsonPath("$.byStatus.IN_USE").value(1))
+        .andExpect(jsonPath("$.byStatus.IN_MAINTENANCE").value(0))
+        .andExpect(jsonPath("$.byStatus.OUT_OF_SERVICE").value(0))
+        .andExpect(jsonPath("$.byType.VAN").value(1))
+        .andExpect(jsonPath("$.byType.TRUCK").value(1))
+        .andExpect(jsonPath("$.byType.CAR").value(0))
+        .andExpect(jsonPath("$.byType.MOTORCYCLE").value(0));
   }
 
   private String createVehicleId() throws Exception {

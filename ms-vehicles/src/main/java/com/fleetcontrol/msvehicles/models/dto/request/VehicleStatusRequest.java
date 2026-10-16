@@ -1,6 +1,6 @@
-package com.fleetcontrol.msvehicles.dto;
+package com.fleetcontrol.msvehicles.models.dto.request;
 
-import com.fleetcontrol.msvehicles.model.VehicleStatus;
+import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 

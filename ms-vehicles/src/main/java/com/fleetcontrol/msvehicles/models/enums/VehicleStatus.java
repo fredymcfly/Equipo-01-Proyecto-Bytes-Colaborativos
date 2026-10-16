@@ -1,4 +1,4 @@
-package com.fleetcontrol.msvehicles.model;
+package com.fleetcontrol.msvehicles.models.enums;
 
 /** Operational state of a vehicle. */
 public enum VehicleStatus {
