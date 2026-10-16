@@ -45,9 +45,7 @@ public class SecurityConfig {
     return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
   }
 
-  /**
-   * Every driver endpoint requires a MANAGER or an ADMIN, and internal calls count as MANAGER.
-   */
+  /** Every driver endpoint requires a MANAGER or an ADMIN, and internal calls count as MANAGER. */
   @Bean
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http,
