@@ -149,7 +149,7 @@ class AlertEvaluatorTest {
   }
 
   @Test
-  void evaluate_whenTheCircuitBreakerStopsASource_skipsItsTypes() {
+  void evaluate_whenTheCircuitBreakerStopsOneSource_skipsItsTypes() {
     when(maintenance.detect(any(), any(), any())).thenReturn(List.of());
     when(consumption.detect(any(), any(), any())).thenThrow(FeignFailures.circuitBroken());
     when(reconciler.reconcile(anySet(), anyList()))

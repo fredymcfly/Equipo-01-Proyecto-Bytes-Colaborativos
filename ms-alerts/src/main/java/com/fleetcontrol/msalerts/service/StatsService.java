@@ -51,9 +51,7 @@ public class StatsService {
         .forEach(
             alert -> {
               LocalDate day = alert.getCreatedAt().atOffset(ZoneOffset.UTC).toLocalDate();
-              periods
-                  .get(periodStart(day, granularity))
-                  .merge(alert.getSeverity(), 1L, Long::sum);
+              periods.get(periodStart(day, granularity)).merge(alert.getSeverity(), 1L, Long::sum);
             });
 
     List<StatsResponse.Point> series =
@@ -69,8 +67,7 @@ public class StatsService {
     repository
         .countBySeverity(AlertStatus.OPEN)
         .forEach(count -> open.put(count.getSeverity(), count.getTotal()));
-    return new StatsResponse(
-        from, to, granularity, new StatsResponse.Totals(total), series, open);
+    return new StatsResponse(from, to, granularity, new StatsResponse.Totals(total), series, open);
   }
 
   private void validateRange(LocalDate from, LocalDate to) {

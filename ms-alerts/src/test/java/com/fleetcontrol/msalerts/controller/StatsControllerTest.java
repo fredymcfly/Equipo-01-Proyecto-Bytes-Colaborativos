@@ -125,8 +125,7 @@ class StatsControllerTest extends AbstractIntegrationTest {
   void stats_withInternalKey_isAllowed() throws Exception {
     mockMvc
         .perform(
-            get(STATS + "?from=2026-09-07&to=2026-09-08")
-                .header(INTERNAL_KEY_HEADER, INTERNAL_KEY))
+            get(STATS + "?from=2026-09-07&to=2026-09-08").header(INTERNAL_KEY_HEADER, INTERNAL_KEY))
         .andExpect(status().isOk());
   }
 

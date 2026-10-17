@@ -34,9 +34,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Base class of the integration tests: full application on a real PostgreSQL (Testcontainers),
- * with the clients of the source services replaced by mocks. Every test class that extends it
- * shares the same context, so the container starts only once.
+ * Base class of the integration tests: full application on a real PostgreSQL (Testcontainers), with
+ * the clients of the source services replaced by mocks. Every test class that extends it shares the
+ * same context, so the container starts only once.
  *
  * <p>Run without Docker with {@code mvn test -DexcludedGroups=integration}.
  */

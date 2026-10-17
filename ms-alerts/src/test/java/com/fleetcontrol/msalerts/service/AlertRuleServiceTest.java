@@ -76,8 +76,7 @@ class AlertRuleServiceTest {
     when(repository.saveAndFlush(rule)).thenReturn(rule);
 
     RuleResponse response =
-        service.update(
-            "LICENSE_EXPIRED", new UpdateRuleRequest(true, AlertSeverity.WARNING, null));
+        service.update("LICENSE_EXPIRED", new UpdateRuleRequest(true, AlertSeverity.WARNING, null));
 
     assertThat(response.params()).isEmpty();
   }

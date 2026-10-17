@@ -83,8 +83,7 @@ class AlertControllerTest extends AbstractIntegrationTest {
     list("?type=MAINTENANCE_DUE")
         .andExpect(jsonPath("$.totalElements").value(1))
         .andExpect(jsonPath("$.content[0].type").value("MAINTENANCE_DUE"));
-    list("?severity=WARNING&type=LICENSE_EXPIRING")
-        .andExpect(jsonPath("$.totalElements").value(1));
+    list("?severity=WARNING&type=LICENSE_EXPIRING").andExpect(jsonPath("$.totalElements").value(1));
   }
 
   @Test
@@ -175,8 +174,7 @@ class AlertControllerTest extends AbstractIntegrationTest {
   @Test
   void acknowledge_alreadyAcknowledgedAlert_returnsConflict() throws Exception {
     Alert alert =
-        saveAlert(
-            AlertType.LICENSE_EXPIRING, AlertSeverity.WARNING, AlertStatus.ACKNOWLEDGED, NOW);
+        saveAlert(AlertType.LICENSE_EXPIRING, AlertSeverity.WARNING, AlertStatus.ACKNOWLEDGED, NOW);
 
     acknowledge(alert.getId(), bearer("MANAGER"), null)
         .andExpect(status().isConflict())

@@ -141,8 +141,7 @@ class MaintenanceDetectorTest {
                 order(UUID.randomUUID(), UUID.randomUUID(), "OIL_CHANGE", TODAY.minusDays(1)),
                 order(UUID.randomUUID(), UUID.randomUUID(), "TIRES", TODAY.plusDays(2))));
     Map<AlertType, AlertRule> rules =
-        Map.of(
-            AlertType.MAINTENANCE_OVERDUE, Rules.rule(AlertType.MAINTENANCE_OVERDUE));
+        Map.of(AlertType.MAINTENANCE_OVERDUE, Rules.rule(AlertType.MAINTENANCE_OVERDUE));
 
     List<Detection> detections = detector.detect(rules, TODAY, PLATES);
 
@@ -160,9 +159,7 @@ class MaintenanceDetectorTest {
                 order(UUID.randomUUID(), UUID.randomUUID(), "OIL_CHANGE", TODAY.minusDays(1)),
                 order(UUID.randomUUID(), UUID.randomUUID(), "TIRES", TODAY.plusDays(14))));
     Map<AlertType, AlertRule> rules =
-        Map.of(
-            AlertType.MAINTENANCE_DUE,
-            Rules.rule(AlertType.MAINTENANCE_DUE, "daysBefore", 14));
+        Map.of(AlertType.MAINTENANCE_DUE, Rules.rule(AlertType.MAINTENANCE_DUE, "daysBefore", 14));
 
     List<Detection> detections = detector.detect(rules, TODAY, PLATES);
 

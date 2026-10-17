@@ -93,8 +93,7 @@ class LicenseDetectorTest {
     when(client.expiringLicenses(45, 0, 100)).thenReturn(page(1));
     Map<AlertType, AlertRule> rules =
         Map.of(
-            AlertType.LICENSE_EXPIRING,
-            Rules.rule(AlertType.LICENSE_EXPIRING, "daysBefore", 45));
+            AlertType.LICENSE_EXPIRING, Rules.rule(AlertType.LICENSE_EXPIRING, "daysBefore", 45));
 
     assertThat(detector.detect(rules, TODAY, PLATES)).isEmpty();
 
@@ -128,8 +127,7 @@ class LicenseDetectorTest {
                 driver(UUID.randomUUID(), "Luis Gil", TODAY.plusDays(5))));
     Map<AlertType, AlertRule> rules =
         Map.of(
-            AlertType.LICENSE_EXPIRING,
-            Rules.rule(AlertType.LICENSE_EXPIRING, "daysBefore", 30));
+            AlertType.LICENSE_EXPIRING, Rules.rule(AlertType.LICENSE_EXPIRING, "daysBefore", 30));
 
     List<Detection> detections = detector.detect(rules, TODAY, PLATES);
 

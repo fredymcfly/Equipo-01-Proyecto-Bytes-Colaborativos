@@ -13,8 +13,7 @@ import org.junit.jupiter.api.Test;
 class SwaggerDocsTest extends AbstractIntegrationTest {
 
   private static final String API_DOCS = "/v3/api-docs";
-  private static final String ACKNOWLEDGE =
-      "$.paths['/api/alerts/{alertId}/acknowledge'].post";
+  private static final String ACKNOWLEDGE = "$.paths['/api/alerts/{alertId}/acknowledge'].post";
   private static final String UPDATE_RULE = "$.paths['/api/alerts/rules/{type}'].put";
 
   @Test

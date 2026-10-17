@@ -10,8 +10,8 @@ import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -48,9 +48,9 @@ public class SecurityConfig {
 
   /**
    * Rules per endpoint. Listing alerts and the statistics are also open to other services (the
-   * dashboard reads them with the internal key). Acknowledging and reading the rules need a
-   * MANAGER or an ADMIN. Changing a rule and launching an evaluation need an ADMIN. The specific
-   * rules go first because the first matching rule wins.
+   * dashboard reads them with the internal key). Acknowledging and reading the rules need a MANAGER
+   * or an ADMIN. Changing a rule and launching an evaluation need an ADMIN. The specific rules go
+   * first because the first matching rule wins.
    */
   @Bean
   public SecurityFilterChain securityFilterChain(

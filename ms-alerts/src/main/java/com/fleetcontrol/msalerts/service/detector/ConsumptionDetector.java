@@ -57,9 +57,7 @@ public class ConsumptionDetector implements AlertDetector {
         .filter(
             vehicle ->
                 isHigher(vehicle.avgL100km(), previousAverages.get(vehicle.vehicleId()), threshold))
-        .map(
-            vehicle ->
-                build(rule, vehicle, previousAverages.get(vehicle.vehicleId()), plates))
+        .map(vehicle -> build(rule, vehicle, previousAverages.get(vehicle.vehicleId()), plates))
         .toList();
   }
 

@@ -129,8 +129,7 @@ class StatsServiceTest {
   void stats_withToBeforeFrom_isRejected() {
     assertThatThrownBy(
             () ->
-                service.stats(
-                    LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 9), Granularity.DAY))
+                service.stats(LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 9), Granularity.DAY))
         .isInstanceOfSatisfying(
             InvalidRequestException.class,
             exception ->
@@ -149,8 +148,7 @@ class StatsServiceTest {
             InvalidRequestException.class,
             exception ->
                 assertThat(exception.details())
-                    .containsExactly(
-                        new ErrorDetail("to", "the range must not exceed 366 days")));
+                    .containsExactly(new ErrorDetail("to", "the range must not exceed 366 days")));
   }
 
   @Test

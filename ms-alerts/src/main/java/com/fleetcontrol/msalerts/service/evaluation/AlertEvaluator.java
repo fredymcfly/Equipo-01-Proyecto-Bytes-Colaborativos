@@ -27,8 +27,9 @@ import org.springframework.stereotype.Service;
 
 /**
  * Runs the rules against the source services and updates the alerts. A type whose source service
- * does not answer, or whose circuit breaker is open, is skipped, so its alerts are neither created nor resolved on that round. A
- * type whose rule is disabled is evaluated with no conditions, so its active alerts are resolved.
+ * does not answer, or whose circuit breaker is open, is skipped, so its alerts are neither created
+ * nor resolved on that round. A type whose rule is disabled is evaluated with no conditions, so its
+ * active alerts are resolved.
  *
  * <p>It has no transaction: the calls to the source services can be slow, so the database work is
  * done by {@link AlertReconciler}. Runs are serialized, so a manual run and the scheduled one never

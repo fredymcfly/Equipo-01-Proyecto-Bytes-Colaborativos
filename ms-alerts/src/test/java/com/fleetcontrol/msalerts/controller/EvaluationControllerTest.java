@@ -69,8 +69,7 @@ class EvaluationControllerTest extends AbstractIntegrationTest {
         .thenReturn(
             new DriversPageDto(
                 List.of(
-                    new DriversPageDto.Driver(
-                        expiringDriver, "Miguel Torres", today.plusDays(10)),
+                    new DriversPageDto.Driver(expiringDriver, "Miguel Torres", today.plusDays(10)),
                     new DriversPageDto.Driver(expiredDriver, "Ana Ruiz", today.minusDays(3))),
                 1));
     when(fuelClient.consumption(today.minusDays(30).toString(), today.toString()))
@@ -136,9 +135,7 @@ class EvaluationControllerTest extends AbstractIntegrationTest {
     when(maintenanceClient.orders(anyString(), anyString(), anyInt(), anyInt()))
         .thenReturn(new MaintenanceOrdersDto(List.of(), 1));
 
-    evaluate()
-        .andExpect(jsonPath("$.created").value(0))
-        .andExpect(jsonPath("$.resolved").value(2));
+    evaluate().andExpect(jsonPath("$.created").value(0)).andExpect(jsonPath("$.resolved").value(2));
 
     assertThat(alert(AlertType.MAINTENANCE_OVERDUE).getStatus()).isEqualTo(AlertStatus.RESOLVED);
     assertThat(alert(AlertType.MAINTENANCE_OVERDUE).getResolvedAt()).isNotNull();
@@ -170,9 +167,7 @@ class EvaluationControllerTest extends AbstractIntegrationTest {
     overdue.setStatus(AlertStatus.ACKNOWLEDGED);
     alertRepository.saveAndFlush(overdue);
 
-    evaluate()
-        .andExpect(jsonPath("$.created").value(0))
-        .andExpect(jsonPath("$.resolved").value(0));
+    evaluate().andExpect(jsonPath("$.created").value(0)).andExpect(jsonPath("$.resolved").value(0));
 
     assertThat(alert(AlertType.MAINTENANCE_OVERDUE).getStatus())
         .isEqualTo(AlertStatus.ACKNOWLEDGED);
@@ -232,9 +227,7 @@ class EvaluationControllerTest extends AbstractIntegrationTest {
     disable(AlertType.LICENSE_EXPIRING);
     disable(AlertType.LICENSE_EXPIRED);
 
-    evaluate()
-        .andExpect(jsonPath("$.created").value(3))
-        .andExpect(jsonPath("$.resolved").value(1));
+    evaluate().andExpect(jsonPath("$.created").value(3)).andExpect(jsonPath("$.resolved").value(1));
 
     verifyNoInteractions(driversClient);
     assertThat(alertRepository.findAll())
