@@ -2,6 +2,7 @@ package com.fleetcontrol.msroutes.repository;
 
 import com.fleetcontrol.msroutes.entities.Route;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -59,4 +60,37 @@ public interface RouteRepository
       nativeQuery = true)
   boolean existsDriverOverlap(
       @Param("driverId") UUID driverId, @Param("start") Instant start, @Param("end") Instant end);
+
+  /**
+   * Groups the routes completed in a range by the period of their end date (UTC).
+   *
+   * @param unit {@code date_trunc} unit: day, week or month
+   * @param from start of the range (inclusive)
+   * @param to end of the range (exclusive)
+   * @param vehicleId vehicle id as text, or null for every vehicle
+   */
+  @Query(
+      value =
+          """
+            SELECT to_char(date_trunc(:unit, r.ended_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD')
+                       AS "period",
+                   COUNT(*) AS "routes",
+                   COALESCE(SUM(r.actual_distance_km), 0) AS "distanceKm",
+                   COALESCE(AVG(EXTRACT(EPOCH FROM (r.ended_at - r.started_at)) / 60), 0)
+                       AS "avgDurationMin"
+            FROM routes r
+            WHERE r.status = 'COMPLETED'
+                AND r.ended_at >= :from
+                AND r.ended_at < :to
+                AND (CAST(:vehicleId AS text) IS NULL
+                     OR CAST(r.vehicle_id AS text) = CAST(:vehicleId AS text))
+            GROUP BY 1
+            ORDER BY 1
+            """,
+      nativeQuery = true)
+  List<RouteStatsRow> completedStats(
+      @Param("unit") String unit,
+      @Param("from") Instant from,
+      @Param("to") Instant to,
+      @Param("vehicleId") String vehicleId);
 }

@@ -2,17 +2,20 @@ package com.fleetcontrol.msdashboard.service;
 
 import com.fleetcontrol.msdashboard.constants.ConfigConstants;
 import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.stereotype.Component;
 
 /**
  * Runs the calls to the source services in parallel. A call that fails, whether the service is
- * down, is too slow or answers with an error, does not break the request: it is reported as an
- * unavailable {@link SourceResult} so that the caller can return what it has.
+ * down, is too slow, answers with an error or has its circuit breaker open, does not break the
+ * request: it is reported as an unavailable {@link SourceResult} so that the caller can return what
+ * it has.
  */
 @Slf4j
 @Component
@@ -33,7 +36,7 @@ public class SourceCaller {
   private <T> SourceResult<T> execute(String service, Supplier<T> request) {
     try {
       return new SourceResult<>(service, request.get());
-    } catch (FeignException exception) {
+    } catch (FeignException | NoFallbackAvailableException | CallNotPermittedException exception) {
       log.warn("{} did not answer: {}", service, exception.getMessage());
       return new SourceResult<>(service, null);
     }

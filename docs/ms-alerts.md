@@ -21,7 +21,7 @@ Consume a: ms-maintenance, ms-drivers, ms-fuel, ms-vehicles.
 - Se ejecuta cada 15 minutos (`alerts.evaluation.interval-ms`, por defecto 900000), con un retraso inicial de 60 segundos para esperar a que arranquen los demás servicios.
 - Cada alerta tiene una `dedupKey` única, por ejemplo `MAINTENANCE_DUE:<orderId>`, de modo que una misma condición no genera alertas duplicadas.
 - Si la condición deja de cumplirse, la alerta pasa a `RESOLVED` en la siguiente evaluación.
-- Si una dependencia no responde, el evaluador omite esa regla en esa ronda y continúa con las demás.
+- Si una dependencia no responde, el evaluador omite esa regla en esa ronda y continúa con las demás. Cada servicio de origen tiene su circuit breaker; con el circuito abierto, la regla se omite sin esperar al timeout.
 
 ## Endpoints
 

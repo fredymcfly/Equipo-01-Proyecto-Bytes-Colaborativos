@@ -114,8 +114,8 @@ public class InternalFeignConfig {
 ## Resiliencia
 
 - **Timeouts:** 2 segundos de conexión y 5 de lectura en todos los clientes Feign.
-- **Reintentos:** un reintento, solo en peticiones GET.
-- **Circuit breaker (Resilience4j):** uno por cliente. Se abre cuando falla el 50 % de las últimas 10 llamadas y espera 30 segundos antes de volver a probar.
+- **Reintentos:** un reintento, solo en peticiones GET que no llegan al servicio (conexión o timeout). Las peticiones POST y PATCH no se reintentan, porque podrían aplicarse dos veces.
+- **Circuit breaker (Resilience4j):** uno por cliente. Se abre cuando falla el 50 % de las últimas 10 llamadas y espera 30 segundos antes de volver a probar. Solo cuentan como fallo los cortes de conexión, los timeouts y las respuestas 5xx; un 404 o un 409 no abren el circuito.
 - **Dependencia caída:** el servicio responde `503 SERVICE_UNAVAILABLE`, salvo ms-dashboard y ms-alerts, que continúan con los datos disponibles como se describe en cada servicio.
 
 ## Series temporales
@@ -144,7 +144,8 @@ Cada servicio de dominio genera su propio histórico de 90 días al arrancar con
 - Se activa con `SPRING_PROFILES_ACTIVE=demo` y se controla con `DEMO_SEED` (por defecto 42) y `DEMO_DAYS` (por defecto 90).
 - Es idempotente: solo inserta datos si las tablas del servicio están vacías.
 - Las fechas son relativas al arranque (los últimos `DEMO_DAYS` días), por lo que los datos siempre parecen recientes.
-- Los identificadores son UUID deterministas derivados de la semilla, por ejemplo `UUID.nameUUIDFromBytes(...)` sobre el texto `vehicle-7`. Así ms-routes, ms-fuel y ms-maintenance referencian los mismos vehículos y conductores sin llamarse durante el arranque.
+- Los identificadores son UUID deterministas derivados de la semilla, por ejemplo `UUID.nameUUIDFromBytes(...)` sobre el texto `vehicle-7`. Los vehículos son `vehicle-1` a `vehicle-25` y los conductores `driver-1` a `driver-20`. Así ms-routes, ms-fuel y ms-maintenance referencian los mismos vehículos y conductores sin necesidad de buscarlos.
+- ms-routes y ms-fuel leen de ms-vehicles (y ms-routes también de ms-drivers) los datos reales de esos vehículos y conductores para generar datos válidos: tipo, combustible, depósito, odómetro, estado y licencia. Como esos servicios pueden estar arrancando, su seeder trabaja en segundo plano y lo reintenta cada 5 segundos, hasta 30 veces. Si no responden, no siembra nada y basta con reiniciar el servicio.
 - ms-auth crea el usuario `admin@fleetcontrol.com` con rol ADMIN. Su contraseña se lee de la variable `DEMO_ADMIN_PASSWORD`.
 - Para regenerar el histórico desde cero: `docker compose down -v` y volver a levantar el sistema.
 

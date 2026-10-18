@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -97,6 +98,19 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {
     return validationError("The request body is invalid", List.of());
+  }
+
+  /**
+   * Handles requests without a required query parameter.
+   *
+   * @param ex missing parameter exception
+   * @return response containing the validation error
+   */
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<ApiError> handleMissingParam(MissingServletRequestParameterException ex) {
+    return validationError(
+        VALIDATION_MESSAGE,
+        List.of(new ApiError.Detail(ex.getParameterName(), "Parameter is required")));
   }
 
   private ResponseEntity<ApiError> validationError(String message, List<ApiError.Detail> details) {

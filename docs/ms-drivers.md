@@ -141,7 +141,7 @@ DriverStatus:    ACTIVE, ON_LEAVE, SUSPENDED
 | `JWT_SECRET`, `INTERNAL_API_KEY` | Comunes a los servicios de dominio |
 | `SPRING_PROFILES_ACTIVE`, `DEMO_SEED`, `DEMO_DAYS` | Control del seeder |
 
-**Datos demo:** 20 conductores; 3 con licencia próxima a caducar y 1 caducada.
+**Datos demo:** 20 conductores; 3 con licencia próxima a caducar y 1 caducada. Sus identificadores son deterministas (`UUID.nameUUIDFromBytes("driver-N")`, con N de 1 a 20), de modo que ms-routes los referencia sin preguntarlos.
 
 ## Historias de usuario relacionadas
 
