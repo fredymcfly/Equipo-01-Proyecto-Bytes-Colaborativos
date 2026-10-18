@@ -34,7 +34,8 @@ import net.datafaker.Faker;
  * most one route, so a vehicle or a driver never has two overlapping routes. The vehicles are not
  * out of service, the drivers are active, their license is valid on the day and their category
  * allows the vehicle type. The odometers of every vehicle are consecutive and end at the current
- * odometer of the vehicle. A few routes are planned for the next working days.
+ * odometer of the vehicle. A few routes are planned for the next working days, and every vehicle in
+ * use has a route in progress that started today.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DemoRouteGenerator {
@@ -47,23 +48,26 @@ public final class DemoRouteGenerator {
   };
 
   /**
-   * Generates the completed routes of the last days and the planned routes of the next ones.
+   * Generates the completed routes of the last days, the planned routes of the next ones and the
+   * routes in progress now.
    *
    * @param vehicles the demo vehicles, in a stable order
    * @param drivers the demo drivers, in a stable order
    * @param random random generator created with the seed of the demo
-   * @param today current day (UTC)
+   * @param now current instant; its day (UTC) is the current day
    * @param days how many days of history are generated
    * @param createdBy id of the user that creates the routes
-   * @return the routes, the completed ones in chronological order and then the planned ones
+   * @return the routes: the completed ones in chronological order, then the planned ones and then
+   *     the ones in progress
    */
   public static List<Route> generate(
       List<VehicleResponse> vehicles,
       List<DriverResponse> drivers,
       Random random,
-      LocalDate today,
+      Instant now,
       int days,
       UUID createdBy) {
+    LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
     List<VehicleResponse> usable =
         vehicles.stream().filter(v -> v.status() != VehicleStatus.OUT_OF_SERVICE).toList();
     Faker faker = new Faker(Locale.forLanguageTag("es"), random);
@@ -71,6 +75,7 @@ public final class DemoRouteGenerator {
         new ArrayList<>(history(usable, drivers, faker, random, today, days, createdBy));
     assignOdometers(routes, vehicles);
     routes.addAll(planned(vehicles, drivers, faker, random, today, createdBy));
+    routes.addAll(inProgress(vehicles, drivers, faker, random, now, createdBy));
     return routes;
   }
 
@@ -218,10 +223,70 @@ public final class DemoRouteGenerator {
         usedDrivers.add(driver.id());
         routes.add(
             plan(
-                vehicle, driver, day, DemoConstants.PLANNED_START_MINUTE, faker, random, createdBy));
+                vehicle,
+                driver,
+                day,
+                DemoConstants.PLANNED_START_MINUTE,
+                faker,
+                random,
+                createdBy));
       }
     }
     return routes;
+  }
+
+  /**
+   * One route in progress for every vehicle that is in use. It started today, after a part of its
+   * estimated duration, so that the status of the vehicle has a route that explains it.
+   */
+  private static List<Route> inProgress(
+      List<VehicleResponse> vehicles,
+      List<DriverResponse> drivers,
+      Faker faker,
+      Random random,
+      Instant now,
+      UUID createdBy) {
+    LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
+    Set<UUID> busyDrivers = new HashSet<>();
+    List<Route> routes = new ArrayList<>();
+    for (VehicleResponse vehicle : vehicles) {
+      if (vehicle.status() != VehicleStatus.IN_USE) {
+        continue;
+      }
+      DriverResponse driver = pickDriver(drivers, vehicle, today, busyDrivers, random);
+      if (driver != null) {
+        busyDrivers.add(driver.id());
+        routes.add(started(vehicle, driver, now, faker, random, createdBy));
+      }
+    }
+    return routes;
+  }
+
+  /** A route that started a while ago and has not ended, from the current odometer. */
+  private static Route started(
+      VehicleResponse vehicle,
+      DriverResponse driver,
+      Instant now,
+      Faker faker,
+      Random random,
+      UUID createdBy) {
+    LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
+    Route route = plan(vehicle, driver, today, 0, faker, random, createdBy);
+    double progress =
+        DemoConstants.IN_PROGRESS_MIN_PROGRESS
+            + random.nextDouble() * DemoConstants.IN_PROGRESS_PROGRESS_RANGE;
+    long elapsedMin = Math.max(1, Math.round(route.getEstimatedDurationMin() * progress));
+    long delayMin = random.nextInt(DemoConstants.MAX_START_DELAY_MIN + 1);
+    Instant midnight = today.atStartOfDay(ZoneOffset.UTC).toInstant();
+    Instant startedAt = now.minusSeconds(elapsedMin * 60);
+    if (startedAt.isBefore(midnight)) {
+      startedAt = midnight;
+    }
+    route.setPlannedStart(startedAt.minusSeconds(delayMin * 60));
+    route.setStatus(RouteStatus.IN_PROGRESS);
+    route.setStartedAt(startedAt);
+    route.setStartOdometerKm(vehicle.odometerKm() == null ? 0 : vehicle.odometerKm());
+    return route;
   }
 
   /** Gives every vehicle consecutive odometers that end at its current reading. */

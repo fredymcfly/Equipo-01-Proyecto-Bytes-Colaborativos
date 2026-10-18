@@ -204,7 +204,7 @@ RouteStatus: PLANNED, IN_PROGRESS, COMPLETED
 | `JWT_SECRET`, `INTERNAL_API_KEY` | Comunes a los servicios de dominio |
 | `SPRING_PROFILES_ACTIVE`, `DEMO_SEED`, `DEMO_DAYS` | Control del seeder |
 
-**Datos demo:** unas 1.300 rutas completadas en días laborables y 3 rutas planificadas.
+**Datos demo:** unas 1.300 rutas completadas en días laborables, 3 rutas planificadas y una ruta en curso por cada vehículo `IN_USE`.
 
 - El seeder lee los vehículos (`vehicle-1` a `vehicle-25`) y los conductores (`driver-1` a `driver-20`) de ms-vehicles y ms-drivers, y reintenta en segundo plano si aún no responden.
 - Cada ruta usa un vehículo que no está `OUT_OF_SERVICE` y un conductor activo, con la licencia vigente ese día y de una categoría compatible.

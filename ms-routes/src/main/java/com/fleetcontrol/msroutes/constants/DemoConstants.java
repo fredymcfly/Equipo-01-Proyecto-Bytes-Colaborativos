@@ -45,6 +45,11 @@ public final class DemoConstants {
   /** Minutes after midnight (UTC) in which the planned routes start: 08:00. */
   public static final int PLANNED_START_MINUTE = 480;
 
+  /** Share of its estimated duration that a route in progress has already run: 20 % to 80 %. */
+  public static final double IN_PROGRESS_MIN_PROGRESS = 0.20;
+
+  public static final double IN_PROGRESS_PROGRESS_RANGE = 0.60;
+
   public static final int MIN_AVERAGE_SPEED_KMH = 55;
   public static final int AVERAGE_SPEED_RANGE_KMH = 15;
   public static final int MIN_DURATION_MIN = 30;

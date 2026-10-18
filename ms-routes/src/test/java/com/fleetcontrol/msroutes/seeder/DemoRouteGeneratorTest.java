@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 class DemoRouteGeneratorTest {
 
   private static final LocalDate TODAY = LocalDate.of(2026, 10, 5);
+  private static final Instant NOW = TODAY.atTime(12, 0).toInstant(ZoneOffset.UTC);
   private static final int DAYS = 90;
   private static final UUID ADMIN = DemoConstants.adminId(42);
 
@@ -148,13 +149,13 @@ class DemoRouteGeneratorTest {
             .toList();
 
     List<Route> routes =
-        DemoRouteGenerator.generate(vehicles, suspended, new Random(42), TODAY, DAYS, ADMIN);
+        DemoRouteGenerator.generate(vehicles, suspended, new Random(42), NOW, DAYS, ADMIN);
 
     assertThat(routes).isEmpty();
   }
 
   private List<Route> generate(int seed) {
-    return DemoRouteGenerator.generate(vehicles, drivers, new Random(seed), TODAY, DAYS, ADMIN);
+    return DemoRouteGenerator.generate(vehicles, drivers, new Random(seed), NOW, DAYS, ADMIN);
   }
 
   private static List<Route> completed(List<Route> routes) {

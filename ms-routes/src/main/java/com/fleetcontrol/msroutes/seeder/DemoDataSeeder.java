@@ -10,8 +10,6 @@ import com.fleetcontrol.msroutes.entities.Route;
 import com.fleetcontrol.msroutes.repository.RouteRepository;
 import feign.FeignException;
 import java.time.Clock;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -97,7 +95,7 @@ public class DemoDataSeeder implements ApplicationRunner {
             vehicles,
             drivers,
             new Random(seed),
-            LocalDate.now(clock.withZone(ZoneOffset.UTC)),
+            clock.instant(),
             days,
             DemoConstants.adminId(seed));
     repository.saveAll(routes);

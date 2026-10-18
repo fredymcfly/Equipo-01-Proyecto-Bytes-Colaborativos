@@ -15,6 +15,12 @@ public final class DemoConstants {
   public static final int DUE_SOON_ORDERS = 5;
   public static final int OVERDUE_ORDERS = 1;
   public static final int MAX_DAYS_AHEAD = 7;
+
+  /** Hours since an order in progress started: this number plus up to the range. */
+  public static final int MIN_HOURS_IN_PROGRESS = 1;
+
+  public static final int HOURS_IN_PROGRESS_RANGE = 3;
+
   public static final int MIN_ODOMETER = 15_000;
   public static final int ODOMETER_RANGE = 70_000;
 

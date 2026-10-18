@@ -2,8 +2,10 @@ package com.fleetcontrol.msmaintenance.seeder;
 
 import com.fleetcontrol.msmaintenance.client.VehicleGateway;
 import com.fleetcontrol.msmaintenance.config.properties.DemoProperties;
+import com.fleetcontrol.msmaintenance.constants.BusinessConstants;
 import com.fleetcontrol.msmaintenance.constants.DemoConstants;
 import com.fleetcontrol.msmaintenance.exception.ApiException;
+import com.fleetcontrol.msmaintenance.models.dto.internal.VehicleResponse;
 import com.fleetcontrol.msmaintenance.models.entities.MaintenanceOrder;
 import com.fleetcontrol.msmaintenance.models.entities.MaintenancePlan;
 import com.fleetcontrol.msmaintenance.models.enums.MaintenanceOrderStatus;
@@ -15,15 +17,18 @@ import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +44,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  *
  * <p>It creates two plans for each of the 25 demo vehicles (50 plans) and 40 completed orders over
  * the last {@code fleet.demo.days} days. Six more plans get an open order: five fall due within a
- * week and one is already late. It does nothing when there are plans already.
+ * week and one is already late. Each vehicle that is in maintenance has an order in progress. It
+ * does nothing when there are plans already.
  */
 @Component
 @Profile("demo")
@@ -87,8 +93,9 @@ public class DemoDataSeeder implements ApplicationRunner {
   }
 
   /**
-   * Seeds the plans and orders if there are none. The odometer of every demo vehicle is read from
-   * ms-vehicles, so the plans are coherent with it and the daily job does not add extra orders.
+   * Seeds the plans and orders if there are none. The odometer and the status of every demo vehicle
+   * are read from ms-vehicles, so the plans are coherent with them and the daily job does not add
+   * extra orders.
    *
    * @return true when the work is done; false when ms-vehicles is not available yet
    */
@@ -98,21 +105,25 @@ public class DemoDataSeeder implements ApplicationRunner {
       return true;
     }
     Map<UUID, Integer> odometers = new HashMap<>();
+    Set<UUID> inMaintenance = new HashSet<>();
     try {
       for (int vehicle = 1; vehicle <= DemoConstants.VEHICLE_COUNT; vehicle++) {
         UUID id = vehicleId(vehicle);
-        Integer odometerKm = vehicleGateway.getVehicle(id).odometerKm();
-        odometers.put(id, odometerKm == null ? 0 : odometerKm);
+        VehicleResponse current = vehicleGateway.getVehicle(id);
+        odometers.put(id, current.odometerKm() == null ? 0 : current.odometerKm());
+        if (BusinessConstants.VehicleStatus.IN_MAINTENANCE.equals(current.status())) {
+          inMaintenance.add(id);
+        }
       }
     } catch (ApiException e) {
       log.info("Waiting for the demo vehicles: {}", e.getMessage());
       return false;
     }
-    transactionTemplate.executeWithoutResult(status -> seed(odometers));
+    transactionTemplate.executeWithoutResult(status -> seed(odometers, inMaintenance));
     return true;
   }
 
-  private void seed(Map<UUID, Integer> odometers) {
+  private void seed(Map<UUID, Integer> odometers, Set<UUID> inMaintenance) {
     Random random =
         new Random(properties.seed() == null ? DemoConstants.DEFAULT_SEED : properties.seed());
     int days = properties.days() == null ? DemoConstants.DEFAULT_DAYS : properties.days();
@@ -149,6 +160,14 @@ public class DemoDataSeeder implements ApplicationRunner {
     Collections.shuffle(withHistory, random);
     for (MaintenancePlan plan : withHistory.subList(0, DemoConstants.HISTORY_ORDERS)) {
       orders.add(completedOrder(plan, today, days, faker));
+    }
+
+    Instant now = clock.instant();
+    for (int vehicle = 1; vehicle <= DemoConstants.VEHICLE_COUNT; vehicle++) {
+      if (inMaintenance.contains(vehicleId(vehicle))) {
+        // The second plan of a vehicle never has an open order, so it can take this one.
+        orders.add(inProgressOrder(otherPlans.get(vehicle - 1), now, faker));
+      }
     }
 
     orderRepository.saveAll(orders);
@@ -222,6 +241,20 @@ public class DemoDataSeeder implements ApplicationRunner {
     order.setCost(randomCost(template(plan.getType()).baseCost(), faker));
     order.setWorkshop(faker.options().nextElement(DemoConstants.WORKSHOPS));
     order.setNotes("Mantenimiento programado");
+    return order;
+  }
+
+  private MaintenanceOrder inProgressOrder(MaintenancePlan plan, Instant now, Faker faker) {
+    long hoursAgo =
+        DemoConstants.MIN_HOURS_IN_PROGRESS
+            + faker.number().numberBetween(0, DemoConstants.HOURS_IN_PROGRESS_RANGE);
+    Instant startedAt = now.minus(Duration.ofHours(hoursAgo));
+    LocalDate day = LocalDate.ofInstant(startedAt, ZoneOffset.UTC);
+
+    MaintenanceOrder order = newOrder(plan, day, MaintenanceOrderStatus.IN_PROGRESS);
+    order.setStartedAt(startedAt);
+    order.setWorkshop(faker.options().nextElement(DemoConstants.WORKSHOPS));
+    order.setNotes("Mantenimiento en curso");
     return order;
   }
 
