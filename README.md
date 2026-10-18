@@ -20,7 +20,7 @@ Backend de gestión de flotas con arquitectura de microservicios, construido en 
 
 ### Diagrama de dependencias
 
-![demo](Archify/fleetcontrol.gif)
+![demo](archify/fleetcontrol.gif)
 
 ## Stack
 
