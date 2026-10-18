@@ -20,31 +20,7 @@ Backend de gestión de flotas con arquitectura de microservicios, construido en 
 
 ### Diagrama de dependencias
 
-```mermaid
-graph TD
-    Cliente --> GW[ms-gateway :8080]
-    GW --> AUTH[ms-auth :8081]
-    GW --> VEH[ms-vehicles :8082]
-    GW --> DRV[ms-drivers :8083]
-    GW --> RTS[ms-routes :8085]
-    GW --> MNT[ms-maintenance :8086]
-    GW --> FUEL[ms-fuel :8087]
-    GW --> ALR[ms-alerts :8088]
-    GW --> DSH[ms-dashboard :8089]
-    RTS --> VEH
-    RTS --> DRV
-    MNT --> VEH
-    FUEL --> VEH
-    ALR --> VEH
-    ALR --> DRV
-    ALR --> MNT
-    ALR --> FUEL
-    DSH --> VEH
-    DSH --> RTS
-    DSH --> FUEL
-    DSH --> MNT
-    DSH --> ALR
-```
+![demo](Archify/fleetcontrol.gif)
 
 ## Stack
 
