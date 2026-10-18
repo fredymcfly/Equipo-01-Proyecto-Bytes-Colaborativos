@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fleetcontrol.msfuel.config.SecurityConfig;
+import com.fleetcontrol.msfuel.config.SecurityErrorHandler;
 import com.fleetcontrol.msfuel.dto.FuelConsumptionResponse;
 import com.fleetcontrol.msfuel.dto.FuelRecordResponse;
 import com.fleetcontrol.msfuel.dto.FuelStatsResponse;
@@ -29,11 +30,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(FuelController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, SecurityErrorHandler.class})
+@TestPropertySource(
+    properties = {
+      "internal.api-key=test-internal-key",
+      "fleet.jwt.secret=test-secret-for-integration-tests-0123456789"
+    })
+@WithMockUser(roles = "MANAGER")
 class FuelControllerTest {
 
   private static final UUID VEHICLE = UUID.fromString("11111111-1111-1111-1111-111111111111");
@@ -175,11 +184,6 @@ class FuelControllerTest {
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.error").value("SERVICE_UNAVAILABLE"))
         .andExpect(jsonPath("$.service").value("ms-vehicles"));
-  }
-
-  @Test
-  void leavesTheErrorRoutePublic() throws Exception {
-    mockMvc.perform(get("/error")).andExpect(status().isInternalServerError());
   }
 
   private static FuelRecordResponse response() {

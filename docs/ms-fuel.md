@@ -6,6 +6,8 @@ Registra los repostajes de la flota y calcula el consumo de cada vehículo. Cons
 
 Consume a: ms-vehicles.
 
+**Seguridad:** todos los endpoints exigen un JWT con rol MANAGER o ADMIN. Las consultas (`GET`) también las aceptan con la cabecera `X-Internal-Key`, que usan ms-alerts y ms-dashboard. El registro de repostajes (`POST`) solo se acepta con JWT. Los errores son `401 UNAUTHORIZED`, `401 TOKEN_EXPIRED` y `403 FORBIDDEN`.
+
 ## Reglas de negocio
 
 - `fuelType` se toma del vehículo; no se envía en el body.
@@ -183,7 +185,11 @@ FuelType: DIESEL, GASOLINE, LPG, HYBRID   // mismos valores que en ms-vehicles
 | `JWT_SECRET`, `INTERNAL_API_KEY` | Comunes a los servicios de dominio |
 | `SPRING_PROFILES_ACTIVE`, `DEMO_SEED`, `DEMO_DAYS` | Control del seeder |
 
-**Datos demo:** unos 300 repostajes con consumo coherente con el tipo de vehículo (±8 % sobre el consumo base y precio entre 1,45 y 1,75 EUR por litro). Dos vehículos tienen un consumo un 30 % superior a su media anterior en los últimos 30 días.
+**Datos demo:** unos 300 repostajes con consumo coherente con el tipo de vehículo (±8 % sobre el consumo base y precio entre 1,45 y 1,75 EUR por litro). Dos vehículos (`vehicle-3` y `vehicle-12`) tienen un consumo un 30 % superior a su media anterior en los últimos 30 días.
+
+- El seeder lee los 25 vehículos de ms-vehicles (por sus identificadores deterministas) y reintenta en segundo plano si aún no responde.
+- Hay 12 repostajes con depósito lleno por vehículo. El tipo de combustible y la capacidad del depósito salen del vehículo, y el consumo base depende del tipo (aprox. `CAR` 6,5, `VAN` 9,5, `TRUCK` 32 y `MOTORCYCLE` 4 L/100 km; los híbridos, un 30 % menos).
+- Los odómetros son crecientes y el último termina cerca del odómetro actual del vehículo.
 
 ## Historias de usuario relacionadas
 

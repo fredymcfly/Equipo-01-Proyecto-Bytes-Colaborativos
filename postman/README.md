@@ -21,7 +21,7 @@ Colección Postman de la plataforma. Es global, pero **cada microservicio es res
 | `serviceUrl` | `http://localhost:8087` | URL directa al microservicio (la que se usa por defecto). |
 | `gatewayUrl` | `http://localhost:8080` | Alternativa a través de ms-gateway. Cambia `{{serviceUrl}}` por `{{gatewayUrl}}` en una petición para probarla por el gateway. |
 | `vehicleId` | UUID de ejemplo | Vehículo usado en las peticiones de `ms-fuel`. Ponlo a un vehículo real de tu base de datos. |
-| `token` | vacío | Reservado para el JWT. Todavía no se usa: los endpoints de `ms-fuel` son públicos mientras la seguridad está aplazada. |
+| `token` | vacío | JWT de un usuario MANAGER o ADMIN (login en `ms-auth`). La colección lo envía como `Authorization: Bearer {{token}}`; sin él, `ms-fuel` responde `401`. |
 
 ## Carpeta `ms-fuel`
 

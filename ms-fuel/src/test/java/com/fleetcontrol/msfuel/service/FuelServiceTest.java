@@ -210,6 +210,32 @@ class FuelServiceTest {
     assertThat(entity.getFuelType()).isEqualTo(FuelType.DIESEL);
   }
 
+  @Test
+  void computesTheConsumptionOfTheSpecificationExample() {
+    FuelRecord entity = new FuelRecord();
+    given(vehicleClient.getVehicle(VEHICLE)).willReturn(vehicle());
+    given(repository.findFirstByVehicleIdOrderByOdometerKmDesc(VEHICLE))
+        .willReturn(Optional.of(record(VEHICLE, 45200, new BigDecimal("20.00"))));
+    given(
+            repository
+                .findFirstByVehicleIdAndFullTankTrueAndOdometerKmLessThanOrderByOdometerKmDesc(
+                    VEHICLE, 45500))
+        .willReturn(Optional.of(record(VEHICLE, 45000, new BigDecimal("40.00"))));
+    given(
+            repository
+                .findByVehicleIdAndOdometerKmGreaterThanAndOdometerKmLessThanOrderByOdometerKmAsc(
+                    VEHICLE, 45000, 45500))
+        .willReturn(List.of(record(VEHICLE, 45200, new BigDecimal("20.00"))));
+    given(mapper.toEntity(any())).willReturn(entity);
+    given(repository.save(entity)).willReturn(entity);
+    given(mapper.toResponse(entity)).willReturn(null);
+
+    service.saveReFuel(request(new BigDecimal("38.00"), 45500, true));
+
+    // (20 + 38) / 500 x 100 = 11.6 L/100 km
+    assertThat(entity.getConsumptionL100km()).isEqualByComparingTo("11.60");
+  }
+
   private static FuelRecordRequest request(BigDecimal liters, int odometerKm, boolean fullTank) {
     return new FuelRecordRequest(
         VEHICLE,

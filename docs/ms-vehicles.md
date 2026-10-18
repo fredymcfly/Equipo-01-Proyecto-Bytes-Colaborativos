@@ -228,7 +228,7 @@ VehicleStatus: AVAILABLE, IN_USE, IN_MAINTENANCE, OUT_OF_SERVICE
 | `JWT_SECRET`, `INTERNAL_API_KEY` | Comunes a los servicios de dominio |
 | `SPRING_PROFILES_ACTIVE`, `DEMO_SEED`, `DEMO_DAYS` | Control del seeder |
 
-**Datos demo:** 25 vehículos de los cuatro tipos y de varios estados.
+**Datos demo:** 25 vehículos de los cuatro tipos y de varios estados. Sus identificadores son deterministas (`UUID.nameUUIDFromBytes("vehicle-N")`, con N de 1 a 25), de modo que ms-routes, ms-fuel y ms-maintenance los referencian sin preguntarlos.
 
 ## Historias de usuario relacionadas
 

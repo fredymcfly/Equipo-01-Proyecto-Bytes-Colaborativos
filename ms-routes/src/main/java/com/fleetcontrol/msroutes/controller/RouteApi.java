@@ -1,8 +1,11 @@
 package com.fleetcontrol.msroutes.controller;
 
+import com.fleetcontrol.msroutes.dto.CompleteRouteRequest;
 import com.fleetcontrol.msroutes.dto.CreateRouteRequest;
 import com.fleetcontrol.msroutes.dto.PageResponse;
 import com.fleetcontrol.msroutes.dto.RouteResponse;
+import com.fleetcontrol.msroutes.dto.RouteStatsResponse;
+import com.fleetcontrol.msroutes.enums.Granularity;
 import com.fleetcontrol.msroutes.enums.RouteStatus;
 import com.fleetcontrol.msroutes.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,7 +57,7 @@ public interface RouteApi {
       description =
           "Validates the vehicle and the driver against ms-vehicles and ms-drivers and checks "
               + "that neither of them has an overlapping PLANNED or IN_PROGRESS route. "
-              + "Requires the MANAGER or ADMIN role.")
+              + RouteApiDocs.REQUIRES_MANAGER)
   @ApiResponse(
       responseCode = "201",
       description = "Route created in PLANNED status",
@@ -64,7 +67,7 @@ public interface RouteApi {
               examples =
                   @ExampleObject(name = "Planned route", value = RouteExamples.ROUTE_PLANNED)))
   @ApiResponse(
-      responseCode = "400",
+      responseCode = RouteApiDocs.CODE_400,
       description = "VALIDATION_ERROR: a field of the body is missing or invalid",
       content =
           @Content(
@@ -73,26 +76,33 @@ public interface RouteApi {
               examples =
                   @ExampleObject(name = "Invalid body", value = RouteExamples.ERR_VALIDATION)))
   @ApiResponse(
-      responseCode = "401",
-      description = "UNAUTHORIZED or TOKEN_EXPIRED",
+      responseCode = RouteApiDocs.CODE_401,
+      description = RouteApiDocs.DESC_UNAUTHORIZED,
       content =
           @Content(
               mediaType = MediaType.APPLICATION_JSON_VALUE,
               schema = @Schema(implementation = ApiError.class),
               examples = {
-                @ExampleObject(name = "Missing token", value = RouteExamples.ERR_UNAUTHORIZED),
-                @ExampleObject(name = "Expired token", value = RouteExamples.ERR_TOKEN_EXPIRED)
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_MISSING_TOKEN,
+                    value = RouteExamples.ERR_UNAUTHORIZED),
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_EXPIRED_TOKEN,
+                    value = RouteExamples.ERR_TOKEN_EXPIRED)
               }))
   @ApiResponse(
-      responseCode = "403",
-      description = "FORBIDDEN: the role has no permission for this operation",
+      responseCode = RouteApiDocs.CODE_403,
+      description = RouteApiDocs.DESC_FORBIDDEN,
       content =
           @Content(
               mediaType = MediaType.APPLICATION_JSON_VALUE,
               schema = @Schema(implementation = ApiError.class),
-              examples = @ExampleObject(name = "Forbidden", value = RouteExamples.ERR_FORBIDDEN)))
+              examples =
+                  @ExampleObject(
+                      name = RouteApiDocs.EXAMPLE_FORBIDDEN,
+                      value = RouteExamples.ERR_FORBIDDEN)))
   @ApiResponse(
-      responseCode = "404",
+      responseCode = RouteApiDocs.CODE_404,
       description = "VEHICLE_NOT_FOUND or DRIVER_NOT_FOUND",
       content =
           @Content(
@@ -107,7 +117,7 @@ public interface RouteApi {
                     value = RouteExamples.ERR_DRIVER_NOT_FOUND)
               }))
   @ApiResponse(
-      responseCode = "409",
+      responseCode = RouteApiDocs.CODE_409,
       description = "VEHICLE_NOT_AVAILABLE, DRIVER_NOT_ELIGIBLE or ROUTE_OVERLAP",
       content =
           @Content(
@@ -130,7 +140,7 @@ public interface RouteApi {
                 @ExampleObject(name = "Driver overlap", value = RouteExamples.ERR_DRIVER_OVERLAP)
               }))
   @ApiResponse(
-      responseCode = "503",
+      responseCode = RouteApiDocs.CODE_503,
       description = "SERVICE_UNAVAILABLE: ms-vehicles or ms-drivers is not responding",
       content =
           @Content(
@@ -163,14 +173,14 @@ public interface RouteApi {
           "All filters are optional and can be combined. `from` and `to` are inclusive days "
               + "(UTC) applied to the planned start. Also available for internal service calls.")
   @ApiResponse(
-      responseCode = "200",
+      responseCode = RouteApiDocs.CODE_200,
       description = "Page of routes",
       content =
           @Content(
               mediaType = MediaType.APPLICATION_JSON_VALUE,
               examples = @ExampleObject(name = "Page of routes", value = RouteExamples.ROUTE_PAGE)))
   @ApiResponse(
-      responseCode = "400",
+      responseCode = RouteApiDocs.CODE_400,
       description = "VALIDATION_ERROR: a query parameter is invalid",
       content =
           @Content(
@@ -181,24 +191,31 @@ public interface RouteApi {
                       name = "Invalid parameter",
                       value = RouteExamples.ERR_VALIDATION_PARAMS)))
   @ApiResponse(
-      responseCode = "401",
-      description = "UNAUTHORIZED or TOKEN_EXPIRED",
+      responseCode = RouteApiDocs.CODE_401,
+      description = RouteApiDocs.DESC_UNAUTHORIZED,
       content =
           @Content(
               mediaType = MediaType.APPLICATION_JSON_VALUE,
               schema = @Schema(implementation = ApiError.class),
               examples = {
-                @ExampleObject(name = "Missing token", value = RouteExamples.ERR_UNAUTHORIZED),
-                @ExampleObject(name = "Expired token", value = RouteExamples.ERR_TOKEN_EXPIRED)
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_MISSING_TOKEN,
+                    value = RouteExamples.ERR_UNAUTHORIZED),
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_EXPIRED_TOKEN,
+                    value = RouteExamples.ERR_TOKEN_EXPIRED)
               }))
   @ApiResponse(
-      responseCode = "403",
-      description = "FORBIDDEN: the role has no permission for this operation",
+      responseCode = RouteApiDocs.CODE_403,
+      description = RouteApiDocs.DESC_FORBIDDEN,
       content =
           @Content(
               mediaType = MediaType.APPLICATION_JSON_VALUE,
               schema = @Schema(implementation = ApiError.class),
-              examples = @ExampleObject(name = "Forbidden", value = RouteExamples.ERR_FORBIDDEN)))
+              examples =
+                  @ExampleObject(
+                      name = RouteApiDocs.EXAMPLE_FORBIDDEN,
+                      value = RouteExamples.ERR_FORBIDDEN)))
   PageResponse<RouteResponse> listRoutes(
       @Parameter(description = "Filter by route status", example = "COMPLETED")
           @RequestParam(required = false)
@@ -242,7 +259,7 @@ public interface RouteApi {
       summary = "Gets a route by id",
       description = "Also available for internal service calls.")
   @ApiResponse(
-      responseCode = "200",
+      responseCode = RouteApiDocs.CODE_200,
       description = "Route found",
       content =
           @Content(
@@ -250,37 +267,315 @@ public interface RouteApi {
               examples =
                   @ExampleObject(name = "Completed route", value = RouteExamples.ROUTE_COMPLETED)))
   @ApiResponse(
-      responseCode = "401",
-      description = "UNAUTHORIZED or TOKEN_EXPIRED",
+      responseCode = RouteApiDocs.CODE_401,
+      description = RouteApiDocs.DESC_UNAUTHORIZED,
       content =
           @Content(
               mediaType = MediaType.APPLICATION_JSON_VALUE,
               schema = @Schema(implementation = ApiError.class),
               examples = {
-                @ExampleObject(name = "Missing token", value = RouteExamples.ERR_UNAUTHORIZED),
-                @ExampleObject(name = "Expired token", value = RouteExamples.ERR_TOKEN_EXPIRED)
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_MISSING_TOKEN,
+                    value = RouteExamples.ERR_UNAUTHORIZED),
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_EXPIRED_TOKEN,
+                    value = RouteExamples.ERR_TOKEN_EXPIRED)
               }))
   @ApiResponse(
-      responseCode = "403",
-      description = "FORBIDDEN: the role has no permission for this operation",
-      content =
-          @Content(
-              mediaType = MediaType.APPLICATION_JSON_VALUE,
-              schema = @Schema(implementation = ApiError.class),
-              examples = @ExampleObject(name = "Forbidden", value = RouteExamples.ERR_FORBIDDEN)))
-  @ApiResponse(
-      responseCode = "404",
-      description = "ROUTE_NOT_FOUND",
+      responseCode = RouteApiDocs.CODE_403,
+      description = RouteApiDocs.DESC_FORBIDDEN,
       content =
           @Content(
               mediaType = MediaType.APPLICATION_JSON_VALUE,
               schema = @Schema(implementation = ApiError.class),
               examples =
                   @ExampleObject(
-                      name = "Route not found",
+                      name = RouteApiDocs.EXAMPLE_FORBIDDEN,
+                      value = RouteExamples.ERR_FORBIDDEN)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_404,
+      description = RouteApiDocs.DESC_ROUTE_NOT_FOUND_CODE,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = RouteApiDocs.EXAMPLE_ROUTE_NOT_FOUND,
                       value = RouteExamples.ERR_ROUTE_NOT_FOUND)))
   RouteResponse getRoute(
-      @Parameter(description = "Route id", example = "c8e1b7a4-52d9-4f06-8e3b-1a7d90c4f201")
+      @Parameter(description = RouteApiDocs.PARAM_ROUTE_ID, example = RouteApiDocs.ROUTE_ID_EXAMPLE)
           @PathVariable
           UUID routeId);
+
+  /**
+   * Starts a planned route.
+   *
+   * @param routeId route identifier
+   * @return the route in IN_PROGRESS status
+   */
+  @PostMapping("/{routeId}/start")
+  @Operation(
+      summary = "Starts a planned route",
+      description =
+          "Checks that the route is PLANNED and its vehicle AVAILABLE, sets the vehicle to "
+              + "IN_USE and saves the route as IN_PROGRESS with the current time and the "
+              + "odometer of the vehicle. If the route cannot be saved, the vehicle is released. "
+              + RouteApiDocs.REQUIRES_MANAGER)
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_200,
+      description = "Route in progress",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              examples =
+                  @ExampleObject(name = "In progress", value = RouteExamples.ROUTE_IN_PROGRESS)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_401,
+      description = RouteApiDocs.DESC_UNAUTHORIZED,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples = {
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_MISSING_TOKEN,
+                    value = RouteExamples.ERR_UNAUTHORIZED),
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_EXPIRED_TOKEN,
+                    value = RouteExamples.ERR_TOKEN_EXPIRED)
+              }))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_403,
+      description = RouteApiDocs.DESC_FORBIDDEN,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = RouteApiDocs.EXAMPLE_FORBIDDEN,
+                      value = RouteExamples.ERR_FORBIDDEN)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_404,
+      description = RouteApiDocs.DESC_ROUTE_NOT_FOUND_CODE,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = RouteApiDocs.EXAMPLE_ROUTE_NOT_FOUND,
+                      value = RouteExamples.ERR_ROUTE_NOT_FOUND)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_409,
+      description = "INVALID_ROUTE_STATE or VEHICLE_NOT_AVAILABLE",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = "Route not planned",
+                      value = RouteExamples.ERR_INVALID_ROUTE_STATE)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_503,
+      description = "SERVICE_UNAVAILABLE: ms-vehicles does not answer",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = "Service unavailable",
+                      value = RouteExamples.ERR_SERVICE_UNAVAILABLE)))
+  RouteResponse startRoute(
+      @Parameter(description = RouteApiDocs.PARAM_ROUTE_ID, example = RouteApiDocs.ROUTE_ID_EXAMPLE)
+          @PathVariable
+          UUID routeId);
+
+  /**
+   * Completes a route in progress.
+   *
+   * @param routeId route identifier
+   * @param request real distance and notes
+   * @return the route in COMPLETED status
+   */
+  @PostMapping("/{routeId}/complete")
+  @Operation(
+      summary = "Completes a route in progress",
+      description =
+          "Adds the rounded actual distance to the start odometer, leaves the vehicle AVAILABLE "
+              + "with the new odometer and saves the route as COMPLETED. If ms-vehicles does not "
+              + "answer, the route stays IN_PROGRESS and the call can be repeated. "
+              + RouteApiDocs.REQUIRES_MANAGER)
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_200,
+      description = "Route completed",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              examples =
+                  @ExampleObject(name = "Completed route", value = RouteExamples.ROUTE_COMPLETED)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_400,
+      description = "VALIDATION_ERROR: actualDistanceKm must be greater than 0",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(name = "Invalid body", value = RouteExamples.ERR_VALIDATION)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_401,
+      description = RouteApiDocs.DESC_UNAUTHORIZED,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples = {
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_MISSING_TOKEN,
+                    value = RouteExamples.ERR_UNAUTHORIZED),
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_EXPIRED_TOKEN,
+                    value = RouteExamples.ERR_TOKEN_EXPIRED)
+              }))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_403,
+      description = RouteApiDocs.DESC_FORBIDDEN,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = RouteApiDocs.EXAMPLE_FORBIDDEN,
+                      value = RouteExamples.ERR_FORBIDDEN)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_404,
+      description = RouteApiDocs.DESC_ROUTE_NOT_FOUND_CODE,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = RouteApiDocs.EXAMPLE_ROUTE_NOT_FOUND,
+                      value = RouteExamples.ERR_ROUTE_NOT_FOUND)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_409,
+      description = "INVALID_ROUTE_STATE: the route is not in progress",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = "Route not in progress",
+                      value = RouteExamples.ERR_INVALID_ROUTE_STATE)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_503,
+      description = "SERVICE_UNAVAILABLE: ms-vehicles does not answer",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = "Service unavailable",
+                      value = RouteExamples.ERR_SERVICE_UNAVAILABLE)))
+  RouteResponse completeRoute(
+      @Parameter(description = RouteApiDocs.PARAM_ROUTE_ID, example = RouteApiDocs.ROUTE_ID_EXAMPLE)
+          @PathVariable
+          UUID routeId,
+      @Valid
+          @io.swagger.v3.oas.annotations.parameters.RequestBody(
+              content =
+                  @Content(
+                      mediaType = MediaType.APPLICATION_JSON_VALUE,
+                      examples =
+                          @ExampleObject(
+                              name = "Complete",
+                              value = RouteExamples.COMPLETE_REQUEST)))
+          @RequestBody
+          CompleteRouteRequest request);
+
+  /**
+   * Returns the routes completed in a range, grouped by their end date.
+   *
+   * @param from first day (inclusive)
+   * @param to last day (inclusive)
+   * @param granularity size of the periods
+   * @param vehicleId optional vehicle filter
+   * @return totals and one point per period
+   */
+  @GetMapping("/stats")
+  @Operation(
+      summary = "Statistics of the completed routes",
+      description =
+          "Time series of the routes completed between two days, grouped by their end date "
+              + "(UTC). Weeks start on Monday. Also available for internal service calls.")
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_200,
+      description = "Totals and series",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = RouteStatsResponse.class),
+              examples = @ExampleObject(name = "Weekly", value = RouteExamples.ROUTE_STATS)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_400,
+      description = "VALIDATION_ERROR: missing or invalid parameters",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = "Invalid params",
+                      value = RouteExamples.ERR_VALIDATION_PARAMS)))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_401,
+      description = RouteApiDocs.DESC_UNAUTHORIZED,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples = {
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_MISSING_TOKEN,
+                    value = RouteExamples.ERR_UNAUTHORIZED),
+                @ExampleObject(
+                    name = RouteApiDocs.EXAMPLE_EXPIRED_TOKEN,
+                    value = RouteExamples.ERR_TOKEN_EXPIRED)
+              }))
+  @ApiResponse(
+      responseCode = RouteApiDocs.CODE_403,
+      description = RouteApiDocs.DESC_FORBIDDEN,
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_JSON_VALUE,
+              schema = @Schema(implementation = ApiError.class),
+              examples =
+                  @ExampleObject(
+                      name = RouteApiDocs.EXAMPLE_FORBIDDEN,
+                      value = RouteExamples.ERR_FORBIDDEN)))
+  RouteStatsResponse stats(
+      @Parameter(description = "First day (inclusive) of the end date", example = "2026-09-07")
+          @RequestParam
+          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+          LocalDate from,
+      @Parameter(description = "Last day (inclusive) of the end date", example = "2026-09-27")
+          @RequestParam
+          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+          LocalDate to,
+      @Parameter(description = "Size of the periods", example = "WEEK")
+          @RequestParam(defaultValue = "DAY")
+          Granularity granularity,
+      @Parameter(
+              description = "Filter by vehicle id",
+              example = "6f1c0a52-3b7e-4d1f-9a21-8c4d5e6f7a01")
+          @RequestParam(name = "vehicle", required = false)
+          UUID vehicleId);
 }

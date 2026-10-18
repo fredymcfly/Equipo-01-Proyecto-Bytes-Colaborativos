@@ -21,7 +21,7 @@ public class OpenApiConfig {
             new Info()
                 .title("FleetControl - ms-fuel")
                 .version("v1")
-                .description("Repostajes de la flota y cálculo de consumo"))
+                .description("Fleet refuels and fuel consumption"))
         .components(
             new Components()
                 .addSecuritySchemes(

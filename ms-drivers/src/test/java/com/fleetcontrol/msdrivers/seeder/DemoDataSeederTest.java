@@ -1,23 +1,28 @@
 package com.fleetcontrol.msdrivers.seeder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fleetcontrol.msdrivers.config.properties.DemoProperties;
+import com.fleetcontrol.msdrivers.constants.DemoConstants;
 import com.fleetcontrol.msdrivers.models.entities.Driver;
 import com.fleetcontrol.msdrivers.models.enums.DriverStatus;
 import com.fleetcontrol.msdrivers.models.enums.LicenseCategory;
 import com.fleetcontrol.msdrivers.repository.DriverRepository;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -101,6 +106,21 @@ class DemoDataSeederTest {
   @Test
   void run_leavesTheIdsToBeGeneratedWhenTheDriversAreSaved() {
     assertThat(seed(SEED)).extracting(Driver::getId).containsOnlyNulls();
+  }
+
+  @Test
+  void run_assignsTheDeterministicIdsInGenerationOrder() {
+    seed(SEED);
+
+    for (int number = 1; number <= 20; number++) {
+      verify(repository).reassignId(any(), eq(DemoConstants.driverId(number)));
+    }
+  }
+
+  @Test
+  void driverId_isDerivedFromTheNumberLikeTheOtherServicesDoIt() {
+    assertThat(DemoConstants.driverId(7))
+        .isEqualTo(UUID.nameUUIDFromBytes("driver-7".getBytes(StandardCharsets.UTF_8)));
   }
 
   @Test

@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiErrorResponse> handleTypeMismatch(
       MethodArgumentTypeMismatchException ex) {
     List<ApiFieldError> details =
-        List.of(new ApiFieldError(ex.getName(), "valor no válido: " + ex.getValue()));
+        List.of(new ApiFieldError(ex.getName(), "invalid value: " + ex.getValue()));
     return response(
         ErrorCode.VALIDATION_ERROR, ApiErrorResponse.of(ErrorCode.VALIDATION_ERROR, details));
   }
