@@ -4,6 +4,16 @@
     "description": "Colección de la plataforma FleetControl. Cada microservicio aporta su propia carpeta; ahora mismo solo está implementada la de `ms-fuel`. Antes de lanzar las peticiones, selecciona el entorno `FleetControl - Local`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
   "variable": [
     {
       "key": "serviceUrl",

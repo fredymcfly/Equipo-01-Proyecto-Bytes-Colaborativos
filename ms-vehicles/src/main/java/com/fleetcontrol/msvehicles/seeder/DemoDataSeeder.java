@@ -67,6 +67,7 @@ public class DemoDataSeeder implements ApplicationRunner {
       }
     }
     repository.saveAll(vehicles);
+    assignDeterministicIds(vehicles);
     log.info("Seeded {} demo vehicles", vehicles.size());
   }
 
@@ -121,5 +122,16 @@ public class DemoDataSeeder implements ApplicationRunner {
               letters);
     } while (!used.add(plate));
     return plate;
+  }
+
+  /**
+   * Gives the vehicle number N the id {@code vehicle-N}, in the order they were generated. The ids
+   * are generated when saving, and a generated id cannot be set beforehand, so they are replaced
+   * once the vehicles are stored.
+   */
+  private void assignDeterministicIds(List<Vehicle> vehicles) {
+    for (int index = 0; index < vehicles.size(); index++) {
+      repository.reassignId(vehicles.get(index).getId(), DemoConstants.vehicleId(index + 1));
+    }
   }
 }

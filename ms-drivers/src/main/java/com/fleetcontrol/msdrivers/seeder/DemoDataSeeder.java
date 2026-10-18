@@ -74,6 +74,7 @@ public class DemoDataSeeder implements ApplicationRunner {
               random));
     }
     repository.saveAll(drivers);
+    assignDeterministicIds(drivers);
     log.info("Seeded {} demo drivers", drivers.size());
   }
 
@@ -164,5 +165,16 @@ public class DemoDataSeeder implements ApplicationRunner {
   private static String ascii(String text) {
     String decomposed = Normalizer.normalize(text, Normalizer.Form.NFD);
     return DemoConstants.DIACRITICS.matcher(decomposed).replaceAll("").toLowerCase(Locale.ROOT);
+  }
+
+  /**
+   * Gives the driver number N the id {@code driver-N}, in the order they were generated. The ids
+   * are generated when saving, and a generated id cannot be set beforehand, so they are replaced
+   * once the drivers are stored.
+   */
+  private void assignDeterministicIds(List<Driver> drivers) {
+    for (int index = 0; index < drivers.size(); index++) {
+      repository.reassignId(drivers.get(index).getId(), DemoConstants.driverId(index + 1));
+    }
   }
 }

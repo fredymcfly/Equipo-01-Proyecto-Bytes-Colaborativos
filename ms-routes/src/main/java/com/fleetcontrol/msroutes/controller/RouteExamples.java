@@ -42,6 +42,46 @@ public class RouteExamples {
     }
       """;
 
+  static final String ROUTE_IN_PROGRESS =
+      """
+    {
+      "id": "c8e1b7a4-52d9-4f06-8e3b-1a7d90c4f201",
+      "vehicleId": "6f1c0a52-3b7e-4d1f-9a21-8c4d5e6f7a01",
+      "driverId": "3b2d8f10-7c4a-4e55-b1a0-5d9e2c7f1a01",
+      "origin": "Madrid - Centro Logístico",
+      "destination": "Valencia - Puerto",
+      "plannedStart": "2026-10-06T07:00:00Z",
+      "estimatedDurationMin": 240,
+      "plannedDistanceKm": 355.0,
+      "status": "IN_PROGRESS",
+      "startedAt": "2026-10-06T07:04:12Z",
+      "startOdometerKm": 45210
+    }
+      """;
+
+  static final String COMPLETE_REQUEST =
+      """
+    {
+      "actualDistanceKm": 362.4,
+      "notes": "Sin incidencias"
+    }
+      """;
+
+  static final String ROUTE_STATS =
+      """
+    {
+      "from": "2026-09-07",
+      "to": "2026-09-27",
+      "granularity": "WEEK",
+      "totals": { "routes": 302, "distanceKm": 28084.9 },
+      "series": [
+        { "period": "2026-09-07", "routes": 97, "distanceKm": 9034.1, "avgDurationMin": 128 },
+        { "period": "2026-09-14", "routes": 104, "distanceKm": 9710.6, "avgDurationMin": 131 },
+        { "period": "2026-09-21", "routes": 101, "distanceKm": 9340.2, "avgDurationMin": 126 }
+      ]
+    }
+      """;
+
   static final String ROUTE_PAGE =
       """
     {
@@ -229,6 +269,15 @@ public class RouteExamples {
       "error": "SERVICE_UNAVAILABLE",
       "message": "The service ms-vehicles is unavailable",
       "service": "ms-vehicles",
+      "timestamp": "2026-10-05T10:30:00Z"
+    }
+      """;
+
+  static final String ERR_INVALID_ROUTE_STATE =
+      """
+    {
+      "error": "INVALID_ROUTE_STATE",
+      "message": "Only a planned route can be started",
       "timestamp": "2026-10-05T10:30:00Z"
     }
       """;

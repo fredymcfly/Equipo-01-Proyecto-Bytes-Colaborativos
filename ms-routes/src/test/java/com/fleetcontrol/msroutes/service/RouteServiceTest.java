@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -348,6 +350,48 @@ class RouteServiceTest {
   }
 
   // ---------- helpers ----------
+
+  @Test
+  void planRoute_vehicleCircuitOpen_failsWithServiceUnavailable() {
+    when(vehicleClient.getVehicle(VEHICLE_ID)).thenThrow(circuitBroken());
+
+    assertThatThrownBy(() -> routeService.planRoute(request(), USER_ID))
+        .isInstanceOf(ServiceUnavailableException.class);
+  }
+
+  @Test
+  void planRoute_driverCircuitOpen_failsWithServiceUnavailable() {
+    stubVehicle(VehicleType.VAN, VehicleStatus.AVAILABLE);
+    when(driverClient.getDriver(DRIVER_ID)).thenThrow(circuitBroken());
+
+    assertThatThrownBy(() -> routeService.planRoute(request(), USER_ID))
+        .isInstanceOf(ServiceUnavailableException.class);
+  }
+
+  @Test
+  void planRoute_vehicleNotFoundBehindTheCircuitBreaker_failsWithNotFound() {
+    when(vehicleClient.getVehicle(VEHICLE_ID))
+        .thenThrow(new NoFallbackAvailableException("No fallback available.", notFound()));
+
+    assertApiError(
+        () -> routeService.planRoute(request(), USER_ID),
+        HttpStatus.NOT_FOUND,
+        "VEHICLE_NOT_FOUND");
+  }
+
+  @Test
+  void planRoute_driverNotFoundBehindTheCircuitBreaker_failsWithNotFound() {
+    stubVehicle(VehicleType.VAN, VehicleStatus.AVAILABLE);
+    when(driverClient.getDriver(DRIVER_ID))
+        .thenThrow(new NoFallbackAvailableException("No fallback available.", notFound()));
+
+    assertApiError(
+        () -> routeService.planRoute(request(), USER_ID), HttpStatus.NOT_FOUND, "DRIVER_NOT_FOUND");
+  }
+
+  private static NoFallbackAvailableException circuitBroken() {
+    return new NoFallbackAvailableException("No fallback available.", new TimeoutException());
+  }
 
   private static CreateRouteRequest request() {
     return new CreateRouteRequest(

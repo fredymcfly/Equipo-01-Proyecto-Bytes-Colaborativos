@@ -158,7 +158,7 @@ public class FuelService {
       return repository.findAll(pageable);
     }
     if (from == null || to == null) {
-      throw new InvalidRequestException("from y to deben indicarse juntos");
+      throw new InvalidRequestException("from and to must be provided together");
     }
     validateRange(from, to);
     Instant start = startOfDay(from);
@@ -211,10 +211,10 @@ public class FuelService {
 
   private static void validateRange(LocalDate from, LocalDate to) {
     if (from == null || to == null) {
-      throw new InvalidRequestException("from y to son obligatorios");
+      throw new InvalidRequestException("from and to are required");
     }
     if (from.isAfter(to)) {
-      throw new InvalidRequestException("from no puede ser posterior a to");
+      throw new InvalidRequestException("from must not be after to");
     }
   }
 
@@ -266,7 +266,7 @@ public class FuelService {
   private void validateCapacity(FuelRecordRequest request, VehicleResponse vehicle) {
     if (request.liters().compareTo(BigDecimal.valueOf(vehicle.tankCapacityL())) > 0) {
       throw new InvalidRequestException(
-          "Los litros superan la capacidad del depósito (" + vehicle.tankCapacityL() + " L)");
+          "The liters exceed the tank capacity (" + vehicle.tankCapacityL() + " L)");
     }
   }
 

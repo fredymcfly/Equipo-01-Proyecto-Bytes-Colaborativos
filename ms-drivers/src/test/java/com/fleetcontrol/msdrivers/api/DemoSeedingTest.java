@@ -6,10 +6,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fleetcontrol.msdrivers.config.properties.DemoProperties;
+import com.fleetcontrol.msdrivers.constants.DemoConstants;
+import com.fleetcontrol.msdrivers.models.entities.Driver;
 import com.fleetcontrol.msdrivers.seeder.DemoDataSeeder;
 import com.fleetcontrol.msdrivers.support.AbstractIntegrationTest;
 import java.time.Clock;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -37,6 +40,16 @@ class DemoSeedingTest extends AbstractIntegrationTest {
         .perform(get(DRIVERS + "/{id}", id).header(HttpHeaders.AUTHORIZATION, bearer("MANAGER")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(id.toString()));
+  }
+
+  @Test
+  void seeder_givesTheDemoDriversTheDeterministicIds() {
+    seeder.run(null);
+
+    assertThat(driverRepository.findAll())
+        .extracting(Driver::getId)
+        .containsExactlyInAnyOrderElementsOf(
+            IntStream.rangeClosed(1, 20).mapToObj(DemoConstants::driverId).toList());
   }
 
   @Test

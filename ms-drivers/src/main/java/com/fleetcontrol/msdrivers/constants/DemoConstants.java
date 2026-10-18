@@ -2,7 +2,9 @@ package com.fleetcontrol.msdrivers.constants;
 
 import com.fleetcontrol.msdrivers.models.enums.DriverStatus;
 import com.fleetcontrol.msdrivers.models.enums.LicenseCategory;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -112,4 +114,13 @@ public final class DemoConstants {
           "Marín",
           "Gil",
           "Vega");
+
+  /**
+   * Id of the demo driver with the given number, from 1. It is derived from the number, so the
+   * services that refer to the demo drivers (maintenance, routes, fuel) compute the same ids
+   * without calling this one.
+   */
+  public static UUID driverId(int number) {
+    return UUID.nameUUIDFromBytes(("driver-" + number).getBytes(StandardCharsets.UTF_8));
+  }
 }
