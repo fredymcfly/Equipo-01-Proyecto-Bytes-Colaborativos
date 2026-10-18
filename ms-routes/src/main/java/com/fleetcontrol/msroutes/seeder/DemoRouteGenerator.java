@@ -18,12 +18,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import net.datafaker.Faker;
 
 /**
  * Generates the demo routes from the vehicles and drivers that really exist.
@@ -64,15 +66,18 @@ public final class DemoRouteGenerator {
       UUID createdBy) {
     List<VehicleResponse> usable =
         vehicles.stream().filter(v -> v.status() != VehicleStatus.OUT_OF_SERVICE).toList();
-    List<Route> routes = new ArrayList<>(history(usable, drivers, random, today, days, createdBy));
+    Faker faker = new Faker(Locale.forLanguageTag("es"), random);
+    List<Route> routes =
+        new ArrayList<>(history(usable, drivers, faker, random, today, days, createdBy));
     assignOdometers(routes, vehicles);
-    routes.addAll(planned(vehicles, drivers, random, today, createdBy));
+    routes.addAll(planned(vehicles, drivers, faker, random, today, createdBy));
     return routes;
   }
 
   private static List<Route> history(
       List<VehicleResponse> vehicles,
       List<DriverResponse> drivers,
+      Faker faker,
       Random random,
       LocalDate today,
       int days,
@@ -83,7 +88,7 @@ public final class DemoRouteGenerator {
         continue;
       }
       for (int shift = 0; shift < SHIFT_FIRST_MINUTES.length; shift++) {
-        routes.addAll(shift(vehicles, drivers, random, day, shift, createdBy));
+        routes.addAll(shift(vehicles, drivers, faker, random, day, shift, createdBy));
       }
     }
     return routes;
@@ -92,6 +97,7 @@ public final class DemoRouteGenerator {
   private static List<Route> shift(
       List<VehicleResponse> vehicles,
       List<DriverResponse> drivers,
+      Faker faker,
       Random random,
       LocalDate day,
       int shift,
@@ -112,7 +118,7 @@ public final class DemoRouteGenerator {
       }
       busyDrivers.add(driver.id());
       int startMinute = SHIFT_FIRST_MINUTES[shift] + random.nextInt(SHIFT_RANGES[shift]);
-      routes.add(completed(vehicle, driver, day, startMinute, random, createdBy));
+      routes.add(completed(vehicle, driver, day, startMinute, faker, random, createdBy));
     }
     return routes;
   }
@@ -122,9 +128,10 @@ public final class DemoRouteGenerator {
       DriverResponse driver,
       LocalDate day,
       int startMinute,
+      Faker faker,
       Random random,
       UUID createdBy) {
-    Route route = plan(vehicle, driver, day, startMinute, random, createdBy);
+    Route route = plan(vehicle, driver, day, startMinute, faker, random, createdBy);
     BigDecimal actualKm =
         scaled(
             route.getPlannedDistanceKm(),
@@ -144,7 +151,7 @@ public final class DemoRouteGenerator {
     route.setEndedAt(startedAt.plusSeconds(duration * 60));
     route.setActualDistanceKm(actualKm);
     if (random.nextInt(DemoConstants.NOTE_FREQUENCY) == 0) {
-      route.setNotes(DemoConstants.NOTES.get(random.nextInt(DemoConstants.NOTES.size())));
+      route.setNotes(faker.options().nextElement(DemoConstants.NOTES));
     }
     return route;
   }
@@ -155,9 +162,10 @@ public final class DemoRouteGenerator {
       DriverResponse driver,
       LocalDate day,
       int startMinute,
+      Faker faker,
       Random random,
       UUID createdBy) {
-    DemoConstants.Trip trip = DemoConstants.TRIPS.get(random.nextInt(DemoConstants.TRIPS.size()));
+    DemoConstants.Trip trip = faker.options().nextElement(DemoConstants.TRIPS);
     BigDecimal plannedKm =
         scaled(
             BigDecimal.valueOf(trip.distanceKm()),
@@ -189,6 +197,7 @@ public final class DemoRouteGenerator {
   private static List<Route> planned(
       List<VehicleResponse> vehicles,
       List<DriverResponse> drivers,
+      Faker faker,
       Random random,
       LocalDate today,
       UUID createdBy) {
@@ -208,7 +217,8 @@ public final class DemoRouteGenerator {
       if (driver != null) {
         usedDrivers.add(driver.id());
         routes.add(
-            plan(vehicle, driver, day, DemoConstants.PLANNED_START_MINUTE, random, createdBy));
+            plan(
+                vehicle, driver, day, DemoConstants.PLANNED_START_MINUTE, faker, random, createdBy));
       }
     }
     return routes;

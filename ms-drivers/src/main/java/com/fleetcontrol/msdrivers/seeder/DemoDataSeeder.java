@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.datafaker.Faker;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -55,8 +56,9 @@ public class DemoDataSeeder implements ApplicationRunner {
     Random random =
         new Random(properties.seed() == null ? DemoConstants.DEFAULT_SEED : properties.seed());
     int days = properties.days() == null ? DemoConstants.DEFAULT_DAYS : properties.days();
+    Faker faker = new Faker(Locale.forLanguageTag("es"), random);
 
-    List<LocalDate> expirations = expirationDates(random, LocalDate.now(clock));
+    List<LocalDate> expirations = expirationDates(faker, random, LocalDate.now(clock));
     List<DriverStatus> statuses = statusPool(random);
     List<LicenseCategory> categories = categoryPool(random);
     Set<String> names = new HashSet<>();
@@ -65,13 +67,13 @@ public class DemoDataSeeder implements ApplicationRunner {
     for (int index = 0; index < DemoConstants.DRIVER_COUNT; index++) {
       drivers.add(
           newDriver(
-              uniqueName(random, names),
+              uniqueName(faker, names),
               categories.get(index),
               expirations.get(index),
               statuses.get(index),
               licenses,
               days,
-              random));
+              faker));
     }
     repository.saveAll(drivers);
     assignDeterministicIds(drivers);
@@ -85,36 +87,37 @@ public class DemoDataSeeder implements ApplicationRunner {
       DriverStatus status,
       Set<String> licenses,
       int days,
-      Random random) {
+      Faker faker) {
     Driver driver = new Driver();
     driver.setFullName(name[0] + " " + name[1]);
     driver.setEmail(String.format(DemoConstants.EMAIL_FORMAT, ascii(name[0]), ascii(name[1])));
     driver.setPhone(
         String.format(
             DemoConstants.PHONE_FORMAT,
-            random.nextInt(DemoConstants.PHONE_PREFIX_BOUND),
-            random.nextInt(DemoConstants.PHONE_PART_BOUND),
-            random.nextInt(DemoConstants.PHONE_PART_BOUND)));
-    driver.setLicenseNumber(uniqueLicense(random, category, licenses));
+            faker.number().numberBetween(0, DemoConstants.PHONE_PREFIX_BOUND),
+            faker.number().numberBetween(0, DemoConstants.PHONE_PART_BOUND),
+            faker.number().numberBetween(0, DemoConstants.PHONE_PART_BOUND)));
+    driver.setLicenseNumber(uniqueLicense(faker, category, licenses));
     driver.setLicenseCategory(category);
     driver.setLicenseExpiresAt(expiresAt);
     driver.setStatus(status);
-    Instant createdAt =
-        clock.instant().minus(Duration.ofDays(1L + random.nextInt(Math.max(days, 1))));
+    int daysAgo = faker.number().numberBetween(0, Math.max(days, 1));
+    Instant createdAt = clock.instant().minus(Duration.ofDays(1L + daysAgo));
     driver.setCreatedAt(createdAt);
     driver.setUpdatedAt(createdAt);
     return driver;
   }
 
   /** Expiration dates of the demo: the ones about to expire, the expired one and the valid ones. */
-  private List<LocalDate> expirationDates(Random random, LocalDate today) {
+  private List<LocalDate> expirationDates(Faker faker, Random random, LocalDate today) {
     List<LocalDate> dates = new ArrayList<>();
     DemoConstants.EXPIRING_IN_DAYS.forEach(offset -> dates.add(today.plusDays(offset)));
     dates.add(today.minusDays(DemoConstants.EXPIRED_DAYS_AGO));
     while (dates.size() < DemoConstants.DRIVER_COUNT) {
       dates.add(
           today.plusDays(
-              DemoConstants.VALID_MIN_DAYS + random.nextInt(DemoConstants.VALID_RANGE_DAYS)));
+              DemoConstants.VALID_MIN_DAYS
+                  + faker.number().numberBetween(0, DemoConstants.VALID_RANGE_DAYS)));
     }
     Collections.shuffle(dates, random);
     return dates;
@@ -140,31 +143,35 @@ public class DemoDataSeeder implements ApplicationRunner {
     return categories;
   }
 
-  private String[] uniqueName(Random random, Set<String> used) {
+  private String[] uniqueName(Faker faker, Set<String> used) {
     String first;
     String last;
     do {
-      first = DemoConstants.FIRST_NAMES.get(random.nextInt(DemoConstants.FIRST_NAMES.size()));
-      last = DemoConstants.LAST_NAMES.get(random.nextInt(DemoConstants.LAST_NAMES.size()));
+      first = faker.name().firstName();
+      last = faker.name().lastName();
     } while (!used.add(first + " " + last));
     return new String[] {first, last};
   }
 
-  private String uniqueLicense(Random random, LicenseCategory category, Set<String> used) {
+  private String uniqueLicense(Faker faker, LicenseCategory category, Set<String> used) {
     String license;
     do {
       license =
           String.format(
               DemoConstants.LICENSE_FORMAT,
               category.name(),
-              random.nextInt(DemoConstants.LICENSE_DIGITS_BOUND));
+              faker.number().numberBetween(0, DemoConstants.LICENSE_DIGITS_BOUND));
     } while (!used.add(license));
     return license;
   }
 
   private static String ascii(String text) {
     String decomposed = Normalizer.normalize(text, Normalizer.Form.NFD);
-    return DemoConstants.DIACRITICS.matcher(decomposed).replaceAll("").toLowerCase(Locale.ROOT);
+    return DemoConstants.DIACRITICS
+        .matcher(decomposed)
+        .replaceAll("")
+        .toLowerCase(Locale.ROOT)
+        .replaceAll("[^a-z]", "");
   }
 
   /**

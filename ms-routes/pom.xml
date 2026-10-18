@@ -15,6 +15,7 @@
     <description>ms-routes</description>
     <properties>
         <java.version>17</java.version>
+        <datafaker.version>2.4.2</datafaker.version>
         <jacoco.version>0.8.14</jacoco.version>
         <spotless.version>3.4.0</spotless.version>
         <google-java-format.version>1.28.0</google-java-format.version>
@@ -112,6 +113,11 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+            <version>${datafaker.version}</version>
         </dependency>
     </dependencies>
 

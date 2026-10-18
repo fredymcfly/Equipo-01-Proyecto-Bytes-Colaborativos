@@ -310,9 +310,6 @@ public class FuelService {
             .map(FuelRecord::getLiters)
             .reduce(liters, BigDecimal::add);
 
-    return partials
-        .divide(km, SCALE, RoundingMode.HALF_UP)
-        .multiply(BigDecimal.valueOf(100))
-        .setScale(SCALE, RoundingMode.HALF_UP);
+    return partials.multiply(BigDecimal.valueOf(100)).divide(km, SCALE, RoundingMode.HALF_UP);
   }
 }

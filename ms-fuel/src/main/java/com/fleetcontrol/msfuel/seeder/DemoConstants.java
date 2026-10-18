@@ -44,14 +44,9 @@ public final class DemoConstants {
 
   /** Consumo base en l/100 km por tipo de vehículo. */
   public static final Map<String, Double> BASE_CONSUMPTION =
-      Map.of("CAR", 6.5, "VAN", 9.5, "TRUCK", 32.0, "MOTORCYCLE", 4.0);
+      Map.of("CAR", 6.5, "VAN", 10.5, "TRUCK", 27.0, "MOTORCYCLE", 4.2);
 
   public static final double DEFAULT_CONSUMPTION = 8.0;
-
-  /** Los vehículos híbridos consumen este factor del consumo de su tipo. */
-  public static final double HYBRID_FACTOR = 0.7;
-
-  public static final String HYBRID = "HYBRID";
 
   /** Números de los vehículos que consumen más de lo normal en los últimos 30 días. */
   public static final Set<Integer> HIGH_CONSUMPTION_VEHICLES = Set.of(3, 12);

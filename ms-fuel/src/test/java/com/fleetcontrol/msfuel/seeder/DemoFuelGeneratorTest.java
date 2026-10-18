@@ -99,8 +99,8 @@ class DemoFuelGeneratorTest {
                 BigDecimal expected =
                     current
                         .getLiters()
-                        .divide(BigDecimal.valueOf(km), 2, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100));
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(BigDecimal.valueOf(km), 2, RoundingMode.HALF_UP);
                 assertThat(current.getConsumptionL100km()).isEqualByComparingTo(expected);
               }
               VehicleResponse vehicle = vehicleById.get(vehicleId);

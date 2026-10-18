@@ -14,10 +14,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.datafaker.Faker;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -51,6 +53,7 @@ public class DemoDataSeeder implements ApplicationRunner {
     Random random =
         new Random(properties.seed() == null ? DemoConstants.DEFAULT_SEED : properties.seed());
     int days = properties.days() == null ? DemoConstants.DEFAULT_DAYS : properties.days();
+    Faker faker = new Faker(Locale.forLanguageTag("es"), random);
 
     List<VehicleStatus> statuses = statusPool(random);
     Set<String> plates = new HashSet<>();
@@ -59,10 +62,10 @@ public class DemoDataSeeder implements ApplicationRunner {
     for (DemoConstants.TypeCount group : DemoConstants.TYPE_COUNTS) {
       List<DemoConstants.ModelSpec> models = DemoConstants.CATALOGUE.get(group.type());
       for (int index = 0; index < group.count(); index++) {
-        DemoConstants.ModelSpec model = models.get(random.nextInt(models.size()));
+        DemoConstants.ModelSpec model = faker.options().nextElement(models);
         vehicles.add(
             newVehicle(
-                group, model, statuses.get(number - 1), uniquePlate(random, plates), days, random));
+                group, model, statuses.get(number - 1), uniquePlate(faker, plates), days, faker));
         number++;
       }
     }
@@ -77,20 +80,21 @@ public class DemoDataSeeder implements ApplicationRunner {
       VehicleStatus status,
       String plate,
       int days,
-      Random random) {
+      Faker faker) {
     Vehicle vehicle = new Vehicle();
     vehicle.setPlate(plate);
     vehicle.setMake(model.make());
     vehicle.setModel(model.model());
-    vehicle.setYear(Year.now(clock).getValue() - random.nextInt(DemoConstants.MAX_AGE_YEARS));
+    vehicle.setYear(
+        Year.now(clock).getValue() - faker.number().numberBetween(0, DemoConstants.MAX_AGE_YEARS));
     vehicle.setType(group.type());
     vehicle.setFuelType(model.fuelType());
     vehicle.setTankCapacityL(model.tankCapacityL());
     vehicle.setOdometerKm(
-        DemoConstants.MIN_ODOMETER + random.nextInt(DemoConstants.ODOMETER_RANGE));
+        DemoConstants.MIN_ODOMETER + faker.number().numberBetween(0, DemoConstants.ODOMETER_RANGE));
     vehicle.setStatus(status);
-    Instant createdAt =
-        clock.instant().minus(Duration.ofDays(1L + random.nextInt(Math.max(days, 1))));
+    int daysAgo = faker.number().numberBetween(0, Math.max(days, 1));
+    Instant createdAt = clock.instant().minus(Duration.ofDays(1L + daysAgo));
     vehicle.setCreatedAt(createdAt);
     vehicle.setUpdatedAt(createdAt);
     return vehicle;
@@ -106,20 +110,16 @@ public class DemoDataSeeder implements ApplicationRunner {
     return statuses;
   }
 
-  private String uniquePlate(Random random, Set<String> used) {
+  private String uniquePlate(Faker faker, Set<String> used) {
+    String letters =
+        "[" + DemoConstants.PLATE_LETTERS + "]{" + DemoConstants.PLATE_LETTER_COUNT + "}";
     String plate;
     do {
-      StringBuilder letters = new StringBuilder();
-      for (int index = 0; index < DemoConstants.PLATE_LETTER_COUNT; index++) {
-        letters.append(
-            DemoConstants.PLATE_LETTERS.charAt(
-                random.nextInt(DemoConstants.PLATE_LETTERS.length())));
-      }
       plate =
           String.format(
               DemoConstants.PLATE_FORMAT,
-              random.nextInt(DemoConstants.PLATE_DIGITS_BOUND),
-              letters);
+              faker.number().numberBetween(0, DemoConstants.PLATE_DIGITS_BOUND),
+              faker.regexify(letters));
     } while (!used.add(plate));
     return plate;
   }

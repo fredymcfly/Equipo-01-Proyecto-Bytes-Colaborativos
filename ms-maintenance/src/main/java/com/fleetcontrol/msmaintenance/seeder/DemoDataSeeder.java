@@ -1,7 +1,9 @@
 package com.fleetcontrol.msmaintenance.seeder;
 
+import com.fleetcontrol.msmaintenance.client.VehicleGateway;
 import com.fleetcontrol.msmaintenance.config.properties.DemoProperties;
 import com.fleetcontrol.msmaintenance.constants.DemoConstants;
+import com.fleetcontrol.msmaintenance.exception.ApiException;
 import com.fleetcontrol.msmaintenance.models.entities.MaintenanceOrder;
 import com.fleetcontrol.msmaintenance.models.entities.MaintenancePlan;
 import com.fleetcontrol.msmaintenance.models.enums.MaintenanceOrderStatus;
@@ -17,16 +19,20 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.datafaker.Faker;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Generates the demo history when the service starts with the {@code demo} profile.
@@ -53,28 +59,73 @@ public class DemoDataSeeder implements ApplicationRunner {
 
   private final MaintenancePlanRepository planRepository;
   private final MaintenanceOrderRepository orderRepository;
+  private final VehicleGateway vehicleGateway;
+  private final TransactionTemplate transactionTemplate;
   private final DemoProperties properties;
   private final Clock clock;
 
   @Override
-  @Transactional
   public void run(ApplicationArguments args) {
+    Thread thread = new Thread(this::seedWhenReady, "demo-maintenance-seeder");
+    thread.setDaemon(true);
+    thread.start();
+  }
+
+  private void seedWhenReady() {
+    for (int attempt = 1; attempt <= DemoConstants.RETRY_ATTEMPTS; attempt++) {
+      if (trySeed()) {
+        return;
+      }
+      try {
+        Thread.sleep(DemoConstants.RETRY_DELAY_MS);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return;
+      }
+    }
+    log.warn("Maintenance demo data not seeded: ms-vehicles never answered. Restart me.");
+  }
+
+  /**
+   * Seeds the plans and orders if there are none. The odometer of every demo vehicle is read from
+   * ms-vehicles, so the plans are coherent with it and the daily job does not add extra orders.
+   *
+   * @return true when the work is done; false when ms-vehicles is not available yet
+   */
+  public boolean trySeed() {
     if (planRepository.count() > 0) {
       log.info("Maintenance demo data already present, nothing to seed");
-      return;
+      return true;
     }
+    Map<UUID, Integer> odometers = new HashMap<>();
+    try {
+      for (int vehicle = 1; vehicle <= DemoConstants.VEHICLE_COUNT; vehicle++) {
+        UUID id = vehicleId(vehicle);
+        Integer odometerKm = vehicleGateway.getVehicle(id).odometerKm();
+        odometers.put(id, odometerKm == null ? 0 : odometerKm);
+      }
+    } catch (ApiException e) {
+      log.info("Waiting for the demo vehicles: {}", e.getMessage());
+      return false;
+    }
+    transactionTemplate.executeWithoutResult(status -> seed(odometers));
+    return true;
+  }
+
+  private void seed(Map<UUID, Integer> odometers) {
     Random random =
         new Random(properties.seed() == null ? DemoConstants.DEFAULT_SEED : properties.seed());
     int days = properties.days() == null ? DemoConstants.DEFAULT_DAYS : properties.days();
     LocalDate today = LocalDate.now(clock);
+    Faker faker = new Faker(Locale.forLanguageTag("es"), random);
 
     List<MaintenancePlan> oilPlans = new ArrayList<>();
     List<MaintenancePlan> otherPlans = new ArrayList<>();
     for (int vehicle = 1; vehicle <= DemoConstants.VEHICLE_COUNT; vehicle++) {
       UUID vehicleId = vehicleId(vehicle);
-      oilPlans.add(newPlan(vehicleId, OIL_CHANGE, today, random));
+      oilPlans.add(newPlan(vehicleId, OIL_CHANGE, odometers.get(vehicleId), today, faker));
       PlanTemplate second = SECOND_PLANS.get(vehicle % SECOND_PLANS.size());
-      otherPlans.add(newPlan(vehicleId, second, today, random));
+      otherPlans.add(newPlan(vehicleId, second, odometers.get(vehicleId), today, faker));
     }
 
     // Persist first so every plan has its generated id before orders refer to it.
@@ -85,10 +136,10 @@ public class DemoDataSeeder implements ApplicationRunner {
     for (int index = 0; index < openOrders; index++) {
       LocalDate scheduledFor =
           index < DemoConstants.DUE_SOON_ORDERS
-              ? today.plusDays(1L + random.nextInt(DemoConstants.MAX_DAYS_AHEAD))
-              : today.minusDays(3L + random.nextInt(DemoConstants.MAX_DAYS_AHEAD));
+              ? today.plusDays(1L + faker.number().numberBetween(0, DemoConstants.MAX_DAYS_AHEAD))
+              : today.minusDays(3L + faker.number().numberBetween(0, DemoConstants.MAX_DAYS_AHEAD));
       MaintenancePlan plan = oilPlans.get(index);
-      plan.registerDone(scheduledFor.minusDays(plan.getIntervalDays()), randomOdometer(random));
+      plan.registerDone(scheduledFor.minusDays(plan.getIntervalDays()), plan.getLastDoneKm());
       orders.add(newOrder(plan, scheduledFor, MaintenanceOrderStatus.PENDING));
     }
 
@@ -97,7 +148,7 @@ public class DemoDataSeeder implements ApplicationRunner {
     withHistory.addAll(otherPlans);
     Collections.shuffle(withHistory, random);
     for (MaintenancePlan plan : withHistory.subList(0, DemoConstants.HISTORY_ORDERS)) {
-      orders.add(completedOrder(plan, today, days, random));
+      orders.add(completedOrder(plan, today, days, faker));
     }
 
     orderRepository.saveAll(orders);
@@ -119,13 +170,28 @@ public class DemoDataSeeder implements ApplicationRunner {
   }
 
   private MaintenancePlan newPlan(
-      UUID vehicleId, PlanTemplate template, LocalDate today, Random random) {
+      UUID vehicleId, PlanTemplate template, int odometerKm, LocalDate today, Faker faker) {
     MaintenancePlan plan = new MaintenancePlan();
     plan.setVehicleId(vehicleId);
     plan.setType(template.type());
     plan.setIntervalKm(template.intervalKm());
     plan.setIntervalDays(template.intervalDays());
-    plan.registerDone(today.minusDays(30L + random.nextInt(270)), randomOdometer(random));
+    // The last service is recent enough for the plan not to fall due when the demo starts.
+    int maxDaysAgo =
+        template.intervalDays() == null
+            ? DemoConstants.MAX_DAYS_SINCE_SERVICE
+            : Math.min(
+                DemoConstants.MAX_DAYS_SINCE_SERVICE,
+                template.intervalDays() - DemoConstants.DUE_MARGIN_DAYS);
+    int daysAgo =
+        DemoConstants.MIN_DAYS_SINCE_SERVICE
+            + faker.number().numberBetween(0, maxDaysAgo - DemoConstants.MIN_DAYS_SINCE_SERVICE);
+    int kmWindow =
+        template.intervalKm() == null
+            ? DemoConstants.DAYS_ONLY_KM_WINDOW
+            : (int) (template.intervalKm() * DemoConstants.KM_WINDOW_RATIO);
+    int kmAgo = faker.number().numberBetween(0, Math.max(1, Math.min(kmWindow, odometerKm)));
+    plan.registerDone(today.minusDays(daysAgo), odometerKm - kmAgo);
     return plan;
   }
 
@@ -141,18 +207,20 @@ public class DemoDataSeeder implements ApplicationRunner {
   }
 
   private MaintenanceOrder completedOrder(
-      MaintenancePlan plan, LocalDate today, int days, Random random) {
-    LocalDate day = today.minusDays(1L + random.nextInt(days));
-    int odometerKm = randomOdometer(random);
+      MaintenancePlan plan, LocalDate today, int days, Faker faker) {
+    LocalDate day = today.minusDays(1L + faker.number().numberBetween(0, days));
+    int odometerKm = plan.getLastDoneKm();
     plan.registerDone(day, odometerKm);
 
     MaintenanceOrder order = newOrder(plan, day, MaintenanceOrderStatus.COMPLETED);
-    order.setCompletedAt(
-        day.atTime(8 + random.nextInt(9), random.nextInt(60)).toInstant(ZoneOffset.UTC));
-    order.setStartedAt(order.getCompletedAt().minus(Duration.ofHours(2L + random.nextInt(4))));
+    int hour = 8 + faker.number().numberBetween(0, 9);
+    int minute = faker.number().numberBetween(0, 60);
+    order.setCompletedAt(day.atTime(hour, minute).toInstant(ZoneOffset.UTC));
+    long workHours = 2L + faker.number().numberBetween(0, 4);
+    order.setStartedAt(order.getCompletedAt().minus(Duration.ofHours(workHours)));
     order.setOdometerKm(odometerKm);
-    order.setCost(randomCost(template(plan.getType()).baseCost(), random));
-    order.setWorkshop(DemoConstants.WORKSHOPS.get(random.nextInt(DemoConstants.WORKSHOPS.size())));
+    order.setCost(randomCost(template(plan.getType()).baseCost(), faker));
+    order.setWorkshop(faker.options().nextElement(DemoConstants.WORKSHOPS));
     order.setNotes("Mantenimiento programado");
     return order;
   }
@@ -163,13 +231,9 @@ public class DemoDataSeeder implements ApplicationRunner {
         : SECOND_PLANS.stream().filter(t -> t.type() == type).findFirst().orElse(OIL_CHANGE);
   }
 
-  private BigDecimal randomCost(int baseCost, Random random) {
-    double factor = 0.85 + random.nextDouble() * 0.3;
+  private BigDecimal randomCost(int baseCost, Faker faker) {
+    double factor = 0.85 + faker.random().nextDouble() * 0.3;
     return BigDecimal.valueOf(baseCost * factor).setScale(2, RoundingMode.HALF_UP);
-  }
-
-  private int randomOdometer(Random random) {
-    return DemoConstants.MIN_ODOMETER + random.nextInt(DemoConstants.ODOMETER_RANGE);
   }
 
   /** Interval and typical cost of a kind of plan. */

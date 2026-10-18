@@ -8,11 +8,14 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import net.datafaker.Faker;
 
 /**
  * Genera los repostajes demo a partir de los vehículos reales.
@@ -42,20 +45,29 @@ public final class DemoFuelGenerator {
    */
   public static List<FuelRecord> generate(
       List<VehicleResponse> vehicles, Random random, Instant now, int days) {
+    Faker faker = new Faker(Locale.forLanguageTag("es"), random);
     List<FuelRecord> records = new ArrayList<>();
     for (int index = 0; index < vehicles.size(); index++) {
       boolean highConsumption = DemoConstants.HIGH_CONSUMPTION_VEHICLES.contains(index + 1);
-      records.addAll(forVehicle(vehicles.get(index), random, now, days, highConsumption));
+      records.addAll(forVehicle(vehicles.get(index), faker, random, now, days, highConsumption));
     }
     return records;
   }
 
   private static List<FuelRecord> forVehicle(
-      VehicleResponse vehicle, Random random, Instant now, int days, boolean highConsumption) {
+      VehicleResponse vehicle,
+      Faker faker,
+      Random random,
+      Instant now,
+      int days,
+      boolean highConsumption) {
     int count = DemoConstants.REFUELS_PER_VEHICLE;
     List<Instant> times = times(random, now, days, count);
     double base = baseConsumption(vehicle);
-    Instant highSince = now.minus(Duration.ofDays(DemoConstants.HIGH_CONSUMPTION_DAYS));
+    // Desde el inicio del día, que es como ms-alerts delimita los últimos 30 días.
+    Instant highSince =
+        now.minus(Duration.ofDays(DemoConstants.HIGH_CONSUMPTION_DAYS))
+            .truncatedTo(ChronoUnit.DAYS);
 
     int[] odometers = new int[count];
     BigDecimal[] liters = new BigDecimal[count];
@@ -70,8 +82,10 @@ public final class DemoFuelGenerator {
         double factor =
             DemoConstants.CONSUMPTION_MIN_FACTOR
                 + random.nextDouble() * DemoConstants.CONSUMPTION_FACTOR_RANGE;
-        if (highConsumption && !times.get(index).isBefore(highSince)) {
-          factor *= DemoConstants.HIGH_CONSUMPTION_FACTOR;
+        if (highConsumption) {
+          // Sin ruido: la subida es exactamente del 30 % y la alerta salta siempre.
+          factor =
+              times.get(index).isBefore(highSince) ? 1.0 : DemoConstants.HIGH_CONSUMPTION_FACTOR;
         }
         long km = Math.max(1, Math.round(liters[index].doubleValue() * 100 / (base * factor)));
         odometers[index - 1] = Math.max(0, odometers[index] - (int) km);
@@ -82,7 +96,8 @@ public final class DemoFuelGenerator {
     for (int index = 0; index < count; index++) {
       Integer previous = index == 0 ? null : odometers[index - 1];
       records.add(
-          record(vehicle, times.get(index), liters[index], odometers[index], previous, random));
+          record(
+              vehicle, times.get(index), liters[index], odometers[index], previous, faker, random));
     }
     return records;
   }
@@ -93,6 +108,7 @@ public final class DemoFuelGenerator {
       BigDecimal liters,
       int odometerKm,
       Integer previousOdometerKm,
+      Faker faker,
       Random random) {
     BigDecimal price = price(vehicle, at, random);
     FuelRecord record = new FuelRecord();
@@ -104,16 +120,15 @@ public final class DemoFuelGenerator {
     record.setTotalCost(liters.multiply(price).setScale(SCALE, RoundingMode.HALF_UP));
     record.setOdometerKm(odometerKm);
     record.setFullTank(true);
-    record.setStation(DemoConstants.STATIONS.get(random.nextInt(DemoConstants.STATIONS.size())));
+    record.setStation(faker.options().nextElement(DemoConstants.STATIONS));
     if (previousOdometerKm != null && odometerKm > previousOdometerKm) {
       record.setConsumptionL100km(
           liters
+              .multiply(HUNDRED)
               .divide(
                   BigDecimal.valueOf((long) odometerKm - previousOdometerKm),
                   SCALE,
-                  RoundingMode.HALF_UP)
-              .multiply(HUNDRED)
-              .setScale(SCALE, RoundingMode.HALF_UP));
+                  RoundingMode.HALF_UP));
     }
     return record;
   }
@@ -137,12 +152,8 @@ public final class DemoFuelGenerator {
   }
 
   private static double baseConsumption(VehicleResponse vehicle) {
-    double base =
-        DemoConstants.BASE_CONSUMPTION.getOrDefault(
-            vehicle.type(), DemoConstants.DEFAULT_CONSUMPTION);
-    return DemoConstants.HYBRID.equals(vehicle.fuelType())
-        ? base * DemoConstants.HYBRID_FACTOR
-        : base;
+    return DemoConstants.BASE_CONSUMPTION.getOrDefault(
+        vehicle.type(), DemoConstants.DEFAULT_CONSUMPTION);
   }
 
   /** Precio entre 1,45 y 1,75 €/l, con una tendencia que cambia cada semana. */
