@@ -1,22 +1,27 @@
 package com.fleetcontrol.msvehicles.seeder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fleetcontrol.msvehicles.config.properties.DemoProperties;
+import com.fleetcontrol.msvehicles.constants.DemoConstants;
 import com.fleetcontrol.msvehicles.models.entities.Vehicle;
 import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
 import com.fleetcontrol.msvehicles.models.enums.VehicleType;
 import com.fleetcontrol.msvehicles.repository.VehicleRepository;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -60,6 +65,21 @@ class DemoDataSeederTest {
     List<Vehicle> vehicles = seed(SEED);
 
     assertThat(vehicles).extracting(Vehicle::getId).containsOnlyNulls();
+  }
+
+  @Test
+  void run_assignsTheDeterministicIdsInGenerationOrder() {
+    seed(SEED);
+
+    for (int number = 1; number <= 25; number++) {
+      verify(repository).reassignId(any(), eq(DemoConstants.vehicleId(number)));
+    }
+  }
+
+  @Test
+  void vehicleId_isDerivedFromTheNumberLikeTheOtherServicesDoIt() {
+    assertThat(DemoConstants.vehicleId(7))
+        .isEqualTo(UUID.nameUUIDFromBytes("vehicle-7".getBytes(StandardCharsets.UTF_8)));
   }
 
   @Test

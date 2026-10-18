@@ -6,6 +6,8 @@ Gestiona las rutas de la flota: planificación, ejecución e historial. Consume 
 
 Consume a: ms-vehicles, ms-drivers.
 
+**Resiliencia:** un circuit breaker por cliente (ms-vehicles y ms-drivers) y un reintento solo en las peticiones GET. El cambio de estado del vehículo (PATCH) no se reintenta. Con el circuito abierto o con un timeout, el servicio responde `503 SERVICE_UNAVAILABLE`.
+
 ## Reglas de negocio
 
 - El vehículo debe existir y no estar `OUT_OF_SERVICE`.
@@ -202,7 +204,13 @@ RouteStatus: PLANNED, IN_PROGRESS, COMPLETED
 | `JWT_SECRET`, `INTERNAL_API_KEY` | Comunes a los servicios de dominio |
 | `SPRING_PROFILES_ACTIVE`, `DEMO_SEED`, `DEMO_DAYS` | Control del seeder |
 
-**Datos demo:** unas 1.300 rutas completadas en días laborables y 3 rutas planificadas.
+**Datos demo:** unas 1.300 rutas completadas en días laborables, 3 rutas planificadas y una ruta en curso por cada vehículo `IN_USE`.
+
+- El seeder lee los vehículos (`vehicle-1` a `vehicle-25`) y los conductores (`driver-1` a `driver-20`) de ms-vehicles y ms-drivers, y reintenta en segundo plano si aún no responden.
+- Cada ruta usa un vehículo que no está `OUT_OF_SERVICE` y un conductor activo, con la licencia vigente ese día y de una categoría compatible.
+- Hay dos turnos por día laborable (mañana y tarde), con como máximo una ruta por vehículo y por conductor en cada turno, así que nunca se solapan.
+- Los odómetros de cada vehículo son consecutivos y terminan en su odómetro actual.
+- Las rutas planificadas usan vehículos que están `AVAILABLE` y empiezan en los próximos días laborables.
 
 ## Historias de usuario relacionadas
 

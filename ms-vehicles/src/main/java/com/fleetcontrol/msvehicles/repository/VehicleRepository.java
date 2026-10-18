@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Data access for fleet vehicles. */
 public interface VehicleRepository
@@ -36,4 +39,13 @@ public interface VehicleRepository
 
     long getTotal();
   }
+
+  /**
+   * Replaces the id of a vehicle. Only the demo seeder uses it, to give the demo vehicles the same
+   * ids in every run. The write is flushed first and the persistence context is cleared after it.
+   */
+  @Transactional
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query(value = "UPDATE vehicles SET id = :newId WHERE id = :oldId", nativeQuery = true)
+  int reassignId(@Param("oldId") UUID oldId, @Param("newId") UUID newId);
 }

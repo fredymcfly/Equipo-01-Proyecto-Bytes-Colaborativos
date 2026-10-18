@@ -3,8 +3,10 @@ package com.fleetcontrol.msvehicles.constants;
 import com.fleetcontrol.msvehicles.models.enums.FuelType;
 import com.fleetcontrol.msvehicles.models.enums.VehicleStatus;
 import com.fleetcontrol.msvehicles.models.enums.VehicleType;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -75,4 +77,13 @@ public final class DemoConstants {
               new ModelSpec("Honda", "PCX", FuelType.GASOLINE, 8),
               new ModelSpec("Yamaha", "MT-07", FuelType.GASOLINE, 14),
               new ModelSpec("BMW", "R1250GS", FuelType.GASOLINE, 20)));
+
+  /**
+   * Id of the demo vehicle with the given number, from 1. It is derived from the number, so the
+   * services that refer to the demo vehicles (maintenance, routes, fuel) compute the same ids
+   * without calling this one.
+   */
+  public static UUID vehicleId(int number) {
+    return UUID.nameUUIDFromBytes(("vehicle-" + number).getBytes(StandardCharsets.UTF_8));
+  }
 }

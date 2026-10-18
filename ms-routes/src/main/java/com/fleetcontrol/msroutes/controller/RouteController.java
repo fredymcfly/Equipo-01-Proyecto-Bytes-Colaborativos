@@ -1,8 +1,11 @@
 package com.fleetcontrol.msroutes.controller;
 
+import com.fleetcontrol.msroutes.dto.CompleteRouteRequest;
 import com.fleetcontrol.msroutes.dto.CreateRouteRequest;
 import com.fleetcontrol.msroutes.dto.PageResponse;
 import com.fleetcontrol.msroutes.dto.RouteResponse;
+import com.fleetcontrol.msroutes.dto.RouteStatsResponse;
+import com.fleetcontrol.msroutes.enums.Granularity;
 import com.fleetcontrol.msroutes.enums.RouteStatus;
 import com.fleetcontrol.msroutes.exception.ApiException;
 import com.fleetcontrol.msroutes.service.RouteService;
@@ -48,5 +51,21 @@ public class RouteController implements RouteApi {
   @Override
   public RouteResponse getRoute(UUID routeId) {
     return routeService.getRoute(routeId);
+  }
+
+  @Override
+  public RouteResponse startRoute(UUID routeId) {
+    return routeService.startRoute(routeId);
+  }
+
+  @Override
+  public RouteResponse completeRoute(UUID routeId, CompleteRouteRequest request) {
+    return routeService.completeRoute(routeId, request);
+  }
+
+  @Override
+  public RouteStatsResponse stats(
+      LocalDate from, LocalDate to, Granularity granularity, UUID vehicleId) {
+    return routeService.stats(from, to, granularity, vehicleId);
   }
 }

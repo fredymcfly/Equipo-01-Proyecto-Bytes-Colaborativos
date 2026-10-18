@@ -1,10 +1,9 @@
 package com.fleetcontrol.msroutes;
 
+import com.fleetcontrol.msroutes.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class MsRoutesApplicationTests {
+class MsRoutesApplicationTests extends AbstractIntegrationTest {
 
   @Test
   void contextLoads() {}

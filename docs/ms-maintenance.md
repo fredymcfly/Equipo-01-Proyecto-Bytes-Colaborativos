@@ -309,7 +309,7 @@ MaintenanceOrderStatus: PENDING, IN_PROGRESS, COMPLETED
 | `JWT_SECRET`, `INTERNAL_API_KEY` | Comunes a los servicios de dominio |
 | `SPRING_PROFILES_ACTIVE`, `DEMO_SEED`, `DEMO_DAYS` | Control del seeder |
 
-**Datos demo:** unos 50 planes y 40 órdenes; entre ellas, 5 órdenes pendientes con vencimiento en los próximos 7 días y 1 vencida.
+**Datos demo:** unos 50 planes y 40 órdenes; entre ellas, 5 órdenes pendientes con vencimiento en los próximos 7 días y 1 vencida. Además, una orden en curso por cada vehículo `IN_MAINTENANCE`.
 
 ## Historias de usuario relacionadas
 
